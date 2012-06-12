@@ -1,0 +1,22 @@
+\name{Xbeta}
+\alias{Xbeta}
+\title{Linear combinations of submatrices of an array}
+\description{Computes a matrix of expected values based on an array X of predictors and a vector beta of regression coefficients.}
+\usage{Xbeta(X, beta)}
+\arguments{
+  \item{X}{an n by n by p array}
+  \item{beta}{a p by 1 vector}
+}
+\value{An n by n matrix}
+\author{Peter Hoff}
+\examples{
+## The function is currently defined as
+function (X, beta) 
+{
+    XB <- matrix(0, nrow = dim(X)[1], ncol = dim(X)[2])
+    for (k in seq(1, length(beta), length = length(beta))) {
+        XB <- XB + beta[k] * X[, , k]
+    }
+    XB
+  }
+}

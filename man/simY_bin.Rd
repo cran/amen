@@ -1,0 +1,39 @@
+\name{simY_bin}
+\alias{simY_bin}
+\title{
+Simulate a network, i.e. a binary relational matrix
+}
+\description{
+Simulates a network, i.e. a binary relational matrix
+}
+\usage{
+simY_bin(EZ, rho)
+}
+\arguments{
+  \item{EZ}{
+square matrix giving the expected value of the latent Z matrix
+}
+  \item{rho}{
+dyadic correlation
+}
+}
+\value{
+a square binary matrix
+}
+\author{
+Peter Hoff
+}
+\examples{
+##---- Should be DIRECTLY executable !! ----
+##-- ==>  Define data, use random,
+##--	or do  help(data=index)  for the standard data sets.
+
+## The function is currently defined as
+function (EZ, rho) 
+{
+    ZS <- simZ(EZ, rho)
+    YS <- 1 * (ZS > 0)
+    diag(YS) <- NA
+    YS
+  }
+}
