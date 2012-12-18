@@ -1,5 +1,5 @@
-raSab_bin_fc <-
-function(Z,Y,a,b,Sab,SS=round(sqrt(nrow(Z))))
+raSab_cbin_fc <-
+function(Z,Y,a,b,Sab,odobs,odmax,SS=round(sqrt(nrow(Z))))
 {
   E<-Z-a%*%t(rep(1,nrow(Z))) 
   MEL<-MEU<- -E
@@ -11,6 +11,8 @@ function(Z,Y,a,b,Sab,SS=round(sqrt(nrow(Z))))
   lba[is.na(lba)]<- -Inf
   uba<-apply(MEU,1,min) 
   uba[is.na(uba)]<- Inf
+
+  uba[ odobs==odmax ]<- Inf  # to account for censoring
 
   for(ss in 1:SS)
   {

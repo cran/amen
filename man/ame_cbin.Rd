@@ -1,14 +1,14 @@
-\name{ame_frn}
-\alias{ame_frn}
+\name{ame_cbin}
+\alias{ame_cbin}
 \title{
-AME fit for fixed rank nomination data
+AME fit for censored binary nomination data
 }
 \description{
 An MCMC routine providing a fit to an additive and multiplicative effects
-(AME) regression model for fixed rank nomination data
+(AME) regression model for censored binary nomination data
 }
 \usage{
-ame_frn(Y, X, odmax = rep(max(apply(Y > 0, 1, sum, na.rm = TRUE)), nrow(Y)), rvar = TRUE, cvar = TRUE, dcor = TRUE, R = 1, seed = 1, nscan = 50000, burn = 500, odens = 25, plot = TRUE, print = TRUE)
+ame_cbin(Y, X, odmax = rep(max(apply(Y > 0, 1, sum, na.rm = TRUE)), nrow(Y)), rvar = TRUE, cvar = TRUE, dcor = TRUE, R = 1, seed = 1, nscan = 50000, burn = 500, odens = 25, plot = TRUE, print = TRUE)
 }
 \arguments{
   \item{Y}{
@@ -71,7 +71,7 @@ Peter Hoff
 
 \examples{
 data(YX_frn) 
-fit<-ame_frn(YX_frn$Y,YX_frn$X,burn=5,nscan=5,odens=1)
+fit<-ame_cbin(YX_frn$Y,YX_frn$X,burn=5,nscan=5,odens=1)
 # you should run the Markov chain much longer than this
 
  }

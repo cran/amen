@@ -8,10 +8,12 @@ function(Z,EZ,rho,W,FY)
   ut<-upper.tri(Z)
   lt<-lower.tri(Z)
 
-  for(w in sample(1:length(FY) ))
+  W[is.na(W)]<- -1
+
+  for(w in sample(c(-1,1:length(FY)) ))
   {
-    lb<-suppressWarnings(max(Z[W==w-1],na.rm=TRUE))
-    ub<-suppressWarnings(min(Z[W==w+1],na.rm=TRUE))
+    lb<-suppressWarnings(max(Z[!is.na(W) & W==w-1],na.rm=TRUE))
+    ub<-suppressWarnings(min(Z[!is.na(W) & W==w+1],na.rm=TRUE))
 
     up<- ut & W==w
     ez<- EZ[up] + rho*( t(Z)[up]  - t(EZ)[up] )

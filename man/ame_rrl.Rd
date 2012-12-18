@@ -1,14 +1,14 @@
-\name{ame_frn}
-\alias{ame_frn}
+\name{ame_rrl}
+\alias{ame_rrl}
 \title{
-AME fit for fixed rank nomination data
+AME fit for relative rank nomination data
 }
 \description{
 An MCMC routine providing a fit to an additive and multiplicative effects
-(AME) regression model for fixed rank nomination data
+(AME) regression model for relative rank nomination data
 }
 \usage{
-ame_frn(Y, X, odmax = rep(max(apply(Y > 0, 1, sum, na.rm = TRUE)), nrow(Y)), rvar = TRUE, cvar = TRUE, dcor = TRUE, R = 1, seed = 1, nscan = 50000, burn = 500, odens = 25, plot = TRUE, print = TRUE)
+ame_rrl(Y, X, cvar = TRUE, dcor = TRUE, R = 1, seed = 1, nscan = 50000, burn = 500, odens = 25, plot = TRUE, print = TRUE)
 }
 \arguments{
   \item{Y}{
@@ -16,12 +16,6 @@ an n x n square relational matrix of ranked nominations, where a higher rank ind
 }
   \item{X}{
 an n x n x p array of covariates
-}
-  \item{odmax}{
-a scalar integer or vector of length n gving the maximum number of nominations that each node may make
-}
-  \item{rvar}{
-logical: fit row random effects?
 }
   \item{cvar}{
 logical: fit column random effects?
@@ -71,7 +65,7 @@ Peter Hoff
 
 \examples{
 data(YX_frn) 
-fit<-ame_frn(YX_frn$Y,YX_frn$X,burn=5,nscan=5,odens=1)
+fit<-ame_rrl(YX_frn$Y,YX_frn$X,burn=5,nscan=5,odens=1)
 # you should run the Markov chain much longer than this
 
  }

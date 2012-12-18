@@ -1,13 +1,20 @@
 rZ_bin_fc <-
 function(Z,EZ,rho,Y)
 {
+  # simulates Z under the contraints
+  # (1)  Y[i,j]=1   => Z[i,j]>0    
+  # (2)  Y[i,j]=0   => Z[i,j]<0
+
+
+
   sz<-sqrt(1-rho^2)
   ut<-upper.tri(EZ)
   lt<-lower.tri(EZ)
-  
-  for(y in 0:1)
+ 
+  Y[is.na(Y)]<- -1  
+  for(y in c((-1):1))
   {
-    lb<-c(-Inf,0)[y+1] ; ub<-c(0,Inf)[y+1]  
+    lb<-c(-Inf,-Inf,0)[y+2] ; ub<-c(Inf,0,Inf)[y+2]  
 
     up<- ut & Y==y
     ez<- EZ[up] + rho*( t(Z)[up]  - t(EZ)[up] )

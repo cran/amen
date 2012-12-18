@@ -21,7 +21,8 @@ XXt<-t(mX)%*%mXt                   # crossproduct sums of squares
 fit<-probit_start(Y,X)
 beta<-fit$beta; a<-fit$a*rvar ; b<-fit$b*cvar ; rho<-fit$rho*dcor
 Sab<-cov(cbind(a,b))
-EZ<-Xbeta(X,beta) + outer(a,b,"+") 
+EZ<-Xbeta(X,beta) + outer(a,b,"+")  
+EZ<-EZ/sd(c(EZ))  # see Bailey and Alex's comments
 lb<- c(-Inf,0)[Y+1] ; ub<-c(0,Inf)[Y+1] 
 lb[is.na(lb)]<- -Inf ; ub[is.na(ub)]<- Inf
 Z<- EZ+matrix(qnorm(runif(prod(dim(Y)),pnorm(lb-EZ),pnorm(ub-EZ))),
@@ -83,7 +84,7 @@ for(s in 1:(nscan+burn))
     APS<-APS+a ; BPS<-BPS+b 
  
     ## simulate gof stats
-    YS<-simY_bin(Xbeta(X,beta)+outer(a,b,"+")+U%*%t(V),rho)       
+    YS<-simY_bin(Xbeta(X,beta)+outer(a,b,"+")+U%*%t(V),rho); YS[is.na(Y)]<-NA 
     TR<-c(TR,t_recip(YS))
     TT<-c(TT,t_trans(YS))
     td<-t_degree(YS) ; TOD<- rbind(TOD,td$od) ; TID<- rbind(TID,td$id) 

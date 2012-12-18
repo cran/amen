@@ -2,7 +2,7 @@ probit_start <-
 function(Y,X,rm.int=FALSE)
 {
   # starting values for the probit srm
-  X<-X[,,which(apply(X,3,function(x){var(c(x))})!=0)]
+  X<-X[,,which(apply(X,3,function(x){var(c(x))})!=0),drop=FALSE]
   fit<-glm(c(1*(Y>0))~ apply(X,3,c),family=binomial(link=probit))
   E<-matrix(0,nrow(Y),ncol(Y)) ; E[!is.na(Y)]<-fit$res
 

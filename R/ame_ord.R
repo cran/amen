@@ -24,7 +24,7 @@ FY<-table(c(W)) ; FY<-FY/sum(FY) ; FY<-cumsum(FY)
 
 
 Z<-matrix(qnorm(rank(Y,na.last="keep")/(nrow(Y)^2+1)),nrow=nrow(Y),ncol=ncol(Y))
-fit<-lm(c(Z)~ apply(X,3,c))
+fit<-lm(c(Z)~ -1+apply(X,3,c))
 E<-matrix(0,nrow(Y),ncol(Y)) ; E[!is.na(Y)]<-fit$res
 a<-apply(E,1,mean) ; b<-apply(E,2,mean)
 E<-E - outer(a,b,"+")
@@ -33,6 +33,8 @@ beta<-fit$coef
 Sab<-cov(cbind(a,b))
 diag(Z)<-apply(Z,1,max,na.rm=TRUE)
 U<-V<-matrix(0,nrow(Y),R)
+ZS<-simZ(Xbeta(X,beta) + outer(a,b,"+") ,rho )
+Z[is.na(Z)]<-ZS[is.na(Z)]
 
 ## MCMC setup
 qgof<-1-1/sqrt(nrow(Y))
@@ -93,7 +95,9 @@ for(s in 1:(nscan+burn))
     APS<-APS+a ; BPS<-BPS+b
 
     ## simulate gof stats
-    YS<-simY_ord(Xbeta(X,beta) + outer(a,b,"+") + U%*%t(V), rho, uY,FY ) 
+    YS<-simY_ord(Xbeta(X,beta)+outer(a,b,"+")+U%*%t(V),rho,uY,FY) 
+    YS[is.na(Y)]<-NA
+
     YTS<-1*(YS>quantile(c(YS),qgof,na.rm=TRUE) )
 
     TR<-c(TR,t_recip(YTS))

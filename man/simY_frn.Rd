@@ -7,17 +7,20 @@ Simulate an relational matrix based on a fixed rank nomination scheme
 Simulate an relational matrix based on a fixed rank nomination scheme
 }
 \usage{
-simY_frn(EZ, rho, odmax)
+simY_frn(EZ, rho, odmax, YO)
 }
 \arguments{
   \item{EZ}{
-square matrix giving the expected value of the latent Z matrix
+a square matrix giving the expected value of the latent Z matrix
 }
   \item{rho}{
 dyadic correlation
 }
   \item{odmax}{
 a scalar or vector giving the maximum number of nominations for each node
+}
+\item{YO}{
+a square matrix identifying where missing values should be maintained
 }
 }
 \value{
@@ -33,21 +36,26 @@ Peter Hoff
 ##--	or do  help(data=index)  for the standard data sets.
 
 ## The function is currently defined as
-function (EZ, rho, odmax) 
-{
-    if (length(odmax) == 1) {
-        odmax <- rep(odmax, nrow(EZ))
-    }
-    ZS <- simZ(EZ, rho)
-    diag(ZS) <- -Inf
-    YS <- ZS * 0
-    for (i in 1:nrow(EZ)) {
-        rs <- rank(ZS[i, ]) - (nrow(EZ) - odmax[i])
-        YS[i, ] <- rs * (rs > 0) * (ZS[i, ] > 0)
-        YS[i, YS[i, ] > 0] <- match(YS[i, YS[i, ] > 0], sort(unique(YS[i, 
-            YS[i, ] > 0])))
-    }
-    diag(YS) <- NA
-    YS
+function(EZ,rho,odmax,YO=NULL)
+{ 
+  if(length(odmax)==1) { odmax<-rep(odmax,nrow(EZ)) }
+  ZS<-simZ(EZ,rho)  
+  
+  diag(ZS)<- -Inf
+  if(!is.null(YO)) { ZS[is.na(YO)]<- -Inf } 
+
+  YS<-ZS*0 
+  for(i in 1:nrow(EZ))
+  {
+    rs<-rank(ZS[i,])  -  (nrow(EZ)-odmax[i]) 
+    YS[i,]<-rs*(rs>0)*(ZS[i,]>0) 
+    YS[i,YS[i,]>0 ] <- match( YS[i,YS[i,]>0 ] ,sort(unique(YS[i,YS[i,]>0 ]))) 
   }
+  diag(YS)<-NA 
+  if(!is.null(YO)) { YS[is.na(YO)]<- NA } 
+
+YS
+}
+
+
 }

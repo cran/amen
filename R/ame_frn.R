@@ -21,9 +21,9 @@ YL<-NULL
 warn<-FALSE
 for(i in 1:nrow(Y))
 {
-  yi<-Y[i,]
-  if(length(yi[yi>0]) > length(unique(yi[yi>0])) ) { warn<-TRUE }
-  yi[!is.na(yi)&yi>0]<-rank(yi[!is.na(yi)&yi>0],ties.method="random")
+  yi<-Y[i,] ; rnkd<-which( !is.na(yi)&yi>0 ) 
+  if(length(yi[rnkd])>length(unique(yi[rnkd]))){warn<-TRUE}
+  yi[rnkd]<-rank(yi[rnkd],ties.method="random")
   Y[i,]<-yi
   YL<-rbind(YL, match(1:ymx,yi))
 }
@@ -37,14 +37,26 @@ Sab<-cov(cbind(a,b))
 Z<-Y 
 for(i in 1:nrow(Y))
 {  
-  yi<-Y[i,-i]
-  zi<-qnorm(rank(yi)/nrow(Y)) 
-  zi[yi>0]<-pmax(rep(0,sum(yi>0)),zi[yi>0]) 
-  if(sum(yi>0)<odmax[i]){ zi[yi==0] <- pmin(min(-1,qnorm(mean(Y>0,na.rm=T))),
-                         zi[yi==0]) } 
-  Z[i,-i]<-zi
+  yi<-Y[i,]
+  zi<-qnorm(rank(yi,na.last="keep")/(sum(!is.na(yi))+1)  )
+  rnkd<-which( !is.na(yi)&yi>0 ) 
+  urnkd<-which( !is.na(yi) & yi==0 )
+  zi[rnkd]<-pmax(rep(0,length(rnkd)),zi[rnkd])  
+  ## all ranked individuals must have positive zs
+#  min.zi<-min(0,zi[rnkd])
+#  zi[rnkd]<-zi[rnkd] - min.zi + min(diff(sort(zi[rnkd])))/2
+
+  if(length(rnkd)<odmax[i])   # in this condition, all unranked must have neg z
+  { 
+     zi[!is.na(yi)&yi==0] <- pmin(min(-1,qnorm(mean(Y>0,na.rm=T))),
+     zi[!is.na(yi)&yi==0])  
+#    max.zi<-max(0,zi[urnkd])
+#    zi[urnkd] <- zi[urnkd] - max.zi - min(diff(sort(zi[urnkd])))/2
+  } 
+  Z[i,]<-zi
+  Z[i,is.na(zi)]<-mean(zi,na.rm=TRUE) 
 } 
-diag(Z)<-apply(Z,1,mean,na.rm=TRUE) 
+
 U<-V<-matrix(0,nrow(Y),R)
 
 ## MCMC setup
@@ -100,7 +112,7 @@ for(s in 1:(nscan+burn))
     APS<-APS+a ; BPS<-BPS+b 
  
     ## simulate gof stats
-    YS<-simY_frn(Xbeta(X,beta)+outer(a,b,"+")+U%*%t(V),rho,odmax)       
+    YS<-simY_frn(Xbeta(X,beta)+outer(a,b,"+")+U%*%t(V),rho,odmax,YO=Y)       
     TR<-c(TR,t_recip(1*(YS>0)))
     TT<-c(TT,t_trans(1*(YS>0)))
     td<-t_degree(1*(YS>0)) ; TOD<- rbind(TOD,td$od) ; TID<- rbind(TID,td$id) 
