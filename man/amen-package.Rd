@@ -13,8 +13,8 @@ this software was supported in part by NICHD grant 1R01HD067509-01A1.
 \tabular{ll}{
 Package: \tab amen\cr
 Type: \tab Package\cr
-Version: \tab 0.90 \cr
-Date: \tab 2012-12-18\cr
+Version: \tab 0.91 \cr
+Date: \tab 2013-2-10\cr
 License: \tab GPL-3 \cr
 }
 }

@@ -1,8 +1,14 @@
 ame_nrm <-
 function(Y,X,
-                  rvar=TRUE,cvar=TRUE,dcor=TRUE,R=1,
+                  rvar=TRUE,cvar=TRUE,dcor=TRUE,R=0,
                   seed=1,nscan=5e4,burn=5e2,odens=25,plot=TRUE,print=TRUE)
 {
+
+diag(Y)<-NA
+
+if( length(dim(X))==2 ) { X<-array(X,dim=c(dim(X),1)) }
+if(  !any(apply(X,3,function(x){var(c(x))})==0)  )
+{cat("WARNING: design matrix lacks an intercept","\n") }
 
 ## marginal means and regression sums of squares
 Xr<-apply(X,c(1,3),sum)            # row sum
@@ -12,18 +18,9 @@ mXt<-apply(aperm(X,c(2,1,3)),3,c)  # dyad-transposed design matrix
 XX<-t(mX)%*%mX                     # regression sums of squares
 XXt<-t(mX)%*%mXt                   # crossproduct sums of squares
 
-## starting values
-#X1<-X[,,which(apply(X,3,function(x){var(c(x))})!=0)] 
-#fit<-lm(c(Y)~ apply(X1,3,c))
 
 ###
-if( length(X)==prod(dim(X)[1:2])  & var(c(X))==0 )  
-    {
-      fit <- lm(c(Y) ~ 1)
-    } else{
-      X1 <- X[, , which(apply(X, 3, function(x) {var(c(x))}) != 0)]
-      fit <- lm(c(Y) ~ apply(X1, 3, c))
-    }
+fit <- lm(c(Y) ~ -1 + apply(X, 3, c))
 ###
 
 E<-matrix(0,nrow(Y),ncol(Y)) ; E[!is.na(Y)]<-fit$res

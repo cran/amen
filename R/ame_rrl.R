@@ -1,13 +1,13 @@
 ame_rrl <-
-function(Y,X,cvar=TRUE,dcor=TRUE,R=1,
+function(Y,X,cvar=TRUE,dcor=TRUE,R=0,
              seed=1,nscan=5e4,burn=5e2,odens=25,plot=TRUE,print=TRUE)
 {
 
 diag(Y)<-NA
 
-
-## remove variables that are constant within rows
-X<-X[,,which(apply( apply(X,c(1,3),var),2,sum )>0 ) ]
+if( length(dim(X))==2 ) { X<-array(X,dim=c(dim(X),1)) }
+if(  any(apply( apply(X,c(1,3),var),2,sum )==0 ) )
+{cat("WARNING: row effects are not estimable using this procedure ","\n") }
 
 ## marginal means and regression sums of squares
 Xr<-apply(X,c(1,3),sum)            # row sum
@@ -34,7 +34,7 @@ if(warn){cat("WARNING: Random reordering applied to break ties in ranks\n")}
 
 
 #################### model and starting values 
-fit<-probit_start(Y,X,rm.int=TRUE)
+fit<-probit_start(Y,X)
 beta<-fit$beta ; rho<-fit$rho*dcor ; Sab<-matrix(c(0,0,0,var(fit$b)*cvar),2,2)
 Z<-Y
 for(i in 1:nrow(Y)) { Z[i,-i]<-qnorm(rank(Y[i,-i])/nrow(Y)) }

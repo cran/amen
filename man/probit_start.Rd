@@ -7,7 +7,7 @@ Starting values for probit SRM
 Starting values for probit social relations model
 }
 \usage{
-probit_start(Y, X, rm.int = FALSE)
+probit_start(Y, X)
 }
 \arguments{
   \item{Y}{
@@ -15,9 +15,6 @@ n x n binary relational matrix
 }
   \item{X}{
 n x n x p covariate array
-}
-  \item{rm.int}{
-logicalLL remove intercept?
 }
 }
 \value{
@@ -32,23 +29,16 @@ Peter Hoff
 
 \examples{
 ## The function is currently defined as
-function (Y, X, rm.int = FALSE) 
+probit_start <-
+function(Y,X)
 {
-    X <- X[, , which(apply(X, 3, function(x) {
-        var(c(x))
-    }) != 0)]
-    fit <- glm(c(1 * (Y > 0)) ~ apply(X, 3, c), family = binomial(link = probit))
-    E <- matrix(0, nrow(Y), ncol(Y))
-    E[!is.na(Y)] <- fit$res
-    a <- apply(E, 1, mean)
-    b <- apply(E, 2, mean)
-    E <- E - outer(a, b, "+")
-    rho <- cor(cbind(E[upper.tri(E)], t(E)[upper.tri(E)]))[1, 
-        2]
-    beta <- fit$coef
-    if (rm.int) {
-        beta <- beta[-1]
-    }
-    list(beta = beta, a = a, b = b, rho = rho)
-  }
+  fit<-glm(c(1*(Y>0))~ -1 + apply(X,3,c),family=binomial(link=probit))
+  E<-matrix(0,nrow(Y),ncol(Y)) ; E[!is.na(Y)]<-fit$res
+
+  a<-apply(E,1,mean) ; b<-apply(E,2,mean)
+  E<-E - outer(a,b,"+")
+  rho<-cor(cbind(E[upper.tri(E)],t(E)[upper.tri(E)]))[1,2]
+  beta<-fit$coef
+  list(beta=beta,a=a,b=b,rho=rho)
+}
 }

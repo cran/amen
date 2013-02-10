@@ -1,12 +1,14 @@
 ame_ord <-
 function(Y,X,
-                  rvar=TRUE,cvar=TRUE,dcor=TRUE,R=1,
+                  rvar=TRUE,cvar=TRUE,dcor=TRUE,R=0,
                   seed=1,nscan=5e4,burn=5e2,odens=25,plot=TRUE,print=TRUE)
 {
 
 diag(Y)<-NA
 
-X<-X[,,which(apply(X,3,function(x){var(c(x))})!=0)]
+if( length(dim(X))==2 ) { X<-array(X,dim=c(dim(X),1)) }
+if(  any(apply(X,3,function(x){var(c(x))})==0)  )
+{cat("WARNING: an intercept is not identifiable under this procedure","\n") }
 
 ## marginal means and regression sums of squares
 Xr<-apply(X,c(1,3),sum)            # row sum

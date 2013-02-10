@@ -8,7 +8,7 @@ An MCMC routine providing a fit to an additive and multiplicative effects
 (AME) regression model for relative rank nomination data
 }
 \usage{
-ame_rrl(Y, X, cvar = TRUE, dcor = TRUE, R = 1, seed = 1, nscan = 50000, burn = 500, odens = 25, plot = TRUE, print = TRUE)
+ame_rrl(Y, X, cvar = TRUE, dcor = TRUE, R = 0, seed = 1, nscan = 50000, burn = 500, odens = 25, plot = TRUE, print = TRUE)
 }
 \arguments{
   \item{Y}{

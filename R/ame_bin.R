@@ -1,12 +1,17 @@
 ame_bin <-
 function(Y,X,
-                  rvar=TRUE,cvar=TRUE,dcor=TRUE,R=1,
+                  rvar=TRUE,cvar=TRUE,dcor=TRUE,R=0,
                   seed=1,nscan=5e4,burn=5e2,odens=25,plot=TRUE,print=TRUE)
 {
 
 ## make sure data are binary and missing diag
 Y<-1*(Y>0)
 diag(Y)<-NA
+
+if( length(dim(X))==2 ) { X<-array(X,dim=c(dim(X),1)) }
+if(  !any(apply(X,3,function(x){var(c(x))})==0)  )
+{cat("WARNING: design matrix lacks an intercept","\n") }
+
 
 
 ## marginal means and regression sums of squares

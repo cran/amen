@@ -8,7 +8,7 @@ An MCMC routine providing a fit to an additive and multiplicative effects
 (AME) regression model for ordinal relational data
 }
 \usage{
-ame_ord(Y, X, rvar = TRUE, cvar = TRUE, dcor = TRUE, R = 1, seed = 1, nscan = 50000, burn = 500, odens = 25, plot = TRUE, print = TRUE)
+ame_ord(Y, X, rvar = TRUE, cvar = TRUE, dcor = TRUE, R = 0, seed = 1, nscan = 50000, burn = 500, odens = 25, plot = TRUE, print = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

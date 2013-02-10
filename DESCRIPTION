@@ -2,8 +2,8 @@ Package: amen
 Type: Package
 Title: Additive and multiplicative effects modeling of networks and
         relational data
-Version: 0.90
-Date: 2012-12-18
+Version: 0.91
+Date: 2013-2-10
 Author: Peter Hoff, Bailey Fosdick, Alex Volfovsky, Kate Stovel
 Maintainer: Peter D. Hoff <pdhoff@uw.edu>
 Suggests: coda
@@ -19,6 +19,6 @@ Description: This package computes Bayesian estimates for additive and
         Development of this software was supported in part by NICHD
         grant R01HD067509-01A1.
 License: GPL-3
-Packaged: 2012-12-18 22:38:26 UTC; root
+Packaged: 2013-02-13 01:18:59 UTC; root
 Repository: CRAN
-Date/Publication: 2012-12-19 07:52:50
+Date/Publication: 2013-02-13 06:14:21
