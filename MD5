@@ -1,10 +1,10 @@
-aab5106427af65bce228a2784e50d26e *DESCRIPTION
+c50fa1a4a35cc3f357f04735cc7a85c9 *DESCRIPTION
 8b54e5a89fbda3af5e077053d40bec76 *NAMESPACE
 7b73a5e088838800a47dea2d549a0dc9 *R/Xbeta.R
 70aa31597e6436523d2df97fa24a6fbd *R/ame_bin.R
 f3605d5eca18754d106567b45db4d38b *R/ame_cbin.R
 a9f926de8239aac50f18ef3ed70ccd74 *R/ame_frn.R
-5c82241df96f8c50c7a9cb8a57b72a37 *R/ame_nrm.R
+896e098baf3a61bb4076089cac3fa6d1 *R/ame_nrm.r
 4500dc3f42fdf6d2dfcde472a3589fa1 *R/ame_ord.R
 59677086a5f9152ab62b945ae181bb39 *R/ame_rrl.R
 de7c22f0582fb09c3b327966409d3a75 *R/mhalf.R
@@ -49,7 +49,7 @@ eb4aedbc56b39fac5a9dca2ac3efc0f4 *man/ame_cbin.Rd
 4657c1271fd56d7cbaaeb97c34ba1f5f *man/ame_nrm.Rd
 d73e606efee71dfcaf0f496c3019c00a *man/ame_ord.Rd
 e9156ca4c1176ece7c4ed9c4b5448a51 *man/ame_rrl.Rd
-44ba941c4e3d97597d55b07919f17385 *man/amen-package.Rd
+af32a73dea10a8b06c8adaa1f3baa412 *man/amen-package.Rd
 4920a475cb7008010a70bbf363c73aea *man/mhalf.Rd
 803f14f66420feb722eccb622be5085e *man/plot.ame.Rd
 2e1fac4ba42fa3263e7ed0bdd4752175 *man/probit_start.Rd

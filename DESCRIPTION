@@ -2,8 +2,8 @@ Package: amen
 Type: Package
 Title: Additive and multiplicative effects modeling of networks and
         relational data
-Version: 0.91
-Date: 2013-2-10
+Version: 0.92
+Date: 2013-2-22
 Author: Peter Hoff, Bailey Fosdick, Alex Volfovsky, Kate Stovel
 Maintainer: Peter D. Hoff <pdhoff@uw.edu>
 Suggests: coda
@@ -16,9 +16,11 @@ Description: This package computes Bayesian estimates for additive and
         different relational data structures, including binary/network
         data (bin), normal relational data (nrm), ordinal relational
         data (ord) and data from fixed-rank nomination schemes (frn).
-        Development of this software was supported in part by NICHD
-        grant R01HD067509-01A1.
+        Several of these link functions are discussed in Hoff, Fosdick,
+        Volfovsky and Stovel (2012). Development of this software was
+        supported in part by NICHD grant R01HD067509-01A1.
 License: GPL-3
-Packaged: 2013-02-13 01:18:59 UTC; root
+Packaged: 2013-02-22 17:31:42 UTC; root
 Repository: CRAN
-Date/Publication: 2013-02-13 06:14:21
+Date/Publication: 2013-02-22 19:20:56
+NeedsCompilation: no
