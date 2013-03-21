@@ -1,7 +1,8 @@
 rbeta_ab_fc <-
 function(Z,Sab,rho,X,mX,mXt,XX,XXt,Xr,Xc,s2=1) 
 {
-  ###
+  ### 
+  p<-dim(X)[3]
   Se<-matrix(c(1,rho,rho,1),2,2)*s2
   iSe2<-mhalf(solve(Se))
   td<-iSe2[1,1] ; to<-iSe2[1,2]
@@ -17,9 +18,12 @@ function(Z,Sab,rho,X,mX,mXt,XX,XXt,Xr,Xc,s2=1)
   zr<-rowSums(Zs) ; zc<-colSums(Zs) ; zs<-sum(zc) ; n<-length(zr) 
   ###
 
-  ## dyadic and prior contributions
-  lb<- crossprod(mXs,c(Zs)) 
-  Qb<- XXs + XX/nrow(mXs)
+  ## dyadic and prior contributions  
+  if(p>0)
+  {
+    lb<- crossprod(mXs,c(Zs)) 
+    Qb<- XXs + XX/nrow(mXs) 
+  }
   ##
 
   ## row and column reduction
@@ -36,7 +40,9 @@ function(Z,Sab,rho,X,mX,mXt,XX,XXt,Xr,Xc,s2=1)
 
     iA<-G%*%iA0%*%t(G)
     C<-G%*%C0%*%t(G)
-    
+
+    if(p>0) 
+    {    
     Xsr<-td*Xr + to*Xc  # row sums for transformed X
     Xsc<-td*Xc + to*Xr  # col sums for transformed X
     Xss<-colSums(Xsc)  
@@ -46,13 +52,17 @@ function(Z,Sab,rho,X,mX,mXt,XX,XXt,Xr,Xc,s2=1)
 
     tmp<-crossprod(Xsr,Xsc)
     Qb<- Qb - (iA[1,1]*crossprod(Xsr,Xsr) + iA[2,2]*crossprod(Xsc,Xsc) +
-               iA[2,1]*(tmp+t(tmp)) +  sum(C)*Xss%*%t(Xss) )
+               iA[2,1]*(tmp+t(tmp)) +  sum(C)*Xss%*%t(Xss) ) 
+    }
   }
   ##
-    
+   
+  if(p>0) 
+  { 
   V<-solve(Qb)
   m<-V%*%(lb)
-  beta<-c(rmvnorm(1,m,V))
+  beta<-c(rmvnorm(1,m,V)) 
+  }
   ####
  
   #### simulate a, b 

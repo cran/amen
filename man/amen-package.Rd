@@ -12,8 +12,8 @@ This package computes Bayesian estimates for additive and multiplicative effects
 \tabular{ll}{
 Package: \tab amen\cr
 Type: \tab Package\cr
-Version: \tab 0.92 \cr
-Date: \tab 2013-2-22\cr
+Version: \tab 0.95 \cr
+Date: \tab 2013-3-21\cr
 License: \tab GPL-3 \cr
 }
 }

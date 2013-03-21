@@ -27,6 +27,7 @@ Peter Hoff
 function(object, ...) 
 {
   fit<-object
+require(amen)
     tmp <- cbind(apply(fit$BETA, 2, mean), apply(fit$BETA, 2, 
         sd), apply(fit$BETA, 2, mean)/apply(fit$BETA, 2, sd), 
         2 * (1 - pnorm(abs(apply(fit$BETA, 2, mean)/apply(fit$BETA, 

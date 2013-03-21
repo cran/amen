@@ -1,7 +1,8 @@
 plot.ame <-
 function(x, ...)
-{
-  fit<-x
+{  
+  fit<-x 
+  require(amen)
   par(mfrow=c(3,2),mar=c(3,3,1,1),mgp=c(1.75,.75,0))
 
   mSABR<-apply(fit$SABR,2,median)

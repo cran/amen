@@ -1,34 +1,60 @@
 ame_nrm<-
-function (Y, X, rvar = TRUE, cvar = TRUE, dcor = TRUE, R = 0, 
+function (Y, X=NULL, rvar = TRUE, cvar = TRUE, dcor = TRUE, R = 0, 
     seed = 1, nscan = 50000, burn = 500, odens = 25, plot = TRUE, 
-    print = TRUE) 
-{
+    print = TRUE,intercept=TRUE) 
+{ 
+set.seed(seed)
+
+
+    ## create intercept if X is NULL and intercept is TRUE
+    if(is.null(X) & intercept) {  X<-matrix(1,nrow(Y),nrow(Y)) }
+    if(is.null(X) & !intercept) {  X<-array(dim=c(nrow(Y),nrow(Y),0)) }
+ 
     diag(Y) <- NA
-    if (length(dim(X)) == 2) {
-        X <- array(X, dim = c(dim(X), 1))
+
+    if(length(dim(X))==2 ) { X<-array(X,dim=c(dim(X),1)) }
+    if(dim(X)[1]>0 &  !any(apply(X,3,function(x){var(c(x))})==0) )
+    {
+      if(!intercept){ cat("WARNING: design matrix lacks an intercept","\n")  }
+      if(intercept)  # add an intercept
+      {
+      X1<-array(dim=c(0,0,1)+dim(X))
+      X1[,,1]<-1 ; X1[,,-1]<-X
+      X<-X1
+      }
     }
-    if (!any(apply(X, 3, function(x) {
-        var(c(x))
-    }) == 0)) {
-        cat("WARNING: design matrix lacks an intercept", "\n")
-    }
+
     Xr <- apply(X, c(1, 3), sum)
     Xc <- apply(X, c(2, 3), sum)
     mX <- apply(X, 3, c)
     mXt <- apply(aperm(X, c(2, 1, 3)), 3, c)
     XX <- t(mX) %*% mX
-    XXt <- t(mX) %*% mXt
-    fit <- lm(c(Y) ~ -1 + apply(X, 3, c))
-    E <- matrix(0, nrow(Y), ncol(Y))
-    E[!is.na(Y)] <- fit$res
+    XXt <- t(mX) %*% mXt 
+ 
+    if(dim(X)[3]>0)
+    { 
+    fit <- lm(c(Y) ~ -1 + apply(X, 3, c))   
+    beta<-fit$coef
+    res<-fit$res 
+    }
+
+    if(dim(X)[3]==0)
+    { 
+    beta<-numeric(0) 
+    res<- Y[!is.na(Y)]  
+    }
+ 
+
+
+    E <- matrix(NA, nrow(Y), ncol(Y))
+    E[!is.na(Y)] <- res
     a <- apply(E, 1, mean, na.rm = TRUE)
     b <- apply(E, 2, mean, na.rm = TRUE)
     E <- E - outer(a, b, "+")
-    CE <- cov(cbind(E[upper.tri(E)], t(E)[upper.tri(E)]))
+    CE <- cov(cbind(E[upper.tri(E)], t(E)[upper.tri(E)]),use="complete.obs")
     s2 <- 0.5 * (CE[1, 1] + CE[2, 2])
-    rho <- cov2cor(CE)[1, 2]
-    beta <- fit$coef
-    Sab <- cov(cbind(a, b))
+    rho <- .99*cov2cor(CE)[1, 2]
+    Sab<-cov(cbind(a,b)) + diag(2)*rvar*cvar 
     EZ <- Xbeta(X, beta) + outer(a, b, "+")
     Z <- simY_nrm(EZ, rho, s2)
     diag(Z) <- rnorm(nrow(Y), diag(EZ), sqrt(s2))
@@ -40,7 +66,6 @@ function (Y, X, rvar = TRUE, cvar = TRUE, dcor = TRUE, R = 0,
     td.obs <- t_degree(YT)
     odobs <- apply(YT, 1, sum, na.rm = TRUE)
     idobs <- apply(YT, 2, sum, na.rm = TRUE)
-    set.seed(seed)
     TT <- TR <- TID <- TOD <- SABR <- NULL
     BETA <- matrix(nrow = 0, ncol = dim(X)[3])
     colnames(BETA) <- dimnames(X)[[3]]
@@ -104,7 +129,7 @@ function (Y, X, rvar = TRUE, cvar = TRUE, dcor = TRUE, R = 0,
             if (print) {
                 cat(s, round(apply(BETA, 2, mean), 2), ":", round(apply(SABR, 
                   2, mean), 2), "\n")
-                if (have.coda & length(TR) > 3) {
+                if (have.coda & length(TR) > 3  & length(beta)>0) {
                   cat(round(effectiveSize(BETA)), "\n")
                 }
             }
@@ -115,11 +140,16 @@ function (Y, X, rvar = TRUE, cvar = TRUE, dcor = TRUE, R = 0,
                 hist(b, main = "", col = "lightblue", prob = TRUE)
                 mSABR <- apply(SABR, 2, median)
                 matplot(SABR, type = "l", lty = 1)
-                abline(h = mSABR, col = 1:length(mSABR))
+                abline(h = mSABR, col = 1:length(mSABR)) 
+
+                if(length(beta)>0) 
+                {
                 mBETA <- apply(BETA, 2, median)
                 matplot(BETA, type = "l", lty = 1, col = 1:length(mBETA))
                 abline(h = mBETA, col = 1:length(mBETA))
-                abline(h = 0, col = "gray")
+                abline(h = 0, col = "gray") 
+                } 
+
                 mod <- max(odobs)
                 mid <- max(idobs)
                 qod <- apply(TOD, 2, quantile, prob = c(0.975, 
@@ -146,8 +176,22 @@ function (Y, X, rvar = TRUE, cvar = TRUE, dcor = TRUE, R = 0,
         }
     }
     colnames(SABR) <- c("va", "cab", "vb", "rho", "ve")
-    fit <- list(BETA = BETA, SABR = SABR, UVPM = UVPS/length(TT), 
-        APM = APS/length(TT), BPM = BPS/length(TT), TT = TT, 
+
+###
+UVPM<-UVPS/length(TT)
+UDV<-svd(UVPM)
+U<-UDV$u[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)]) 
+V<-UDV$v[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)])
+A<-APS/length(TT)
+B<-BPS/length(TT) 
+rownames(A)<-rownames(B)<-rownames(U)<-rownames(V)<-rownames(Y)
+EZ<-Xbeta(X,apply(BETA,2,mean)) + outer(A,B,"+")+U%*%t(V)
+dimnames(EZ)<-dimnames(Y) 
+###
+
+
+    fit <- list(BETA = BETA, SABR = SABR, A=A,B=B,U=U,V=V,EZ=EZ,
+        TT = TT, 
         TR = TR, TID = TID, TOD = TOD, tt = tt.obs, tr = tr.obs, 
         td = td.obs)
     class(fit) <- "ame"

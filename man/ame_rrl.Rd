@@ -8,7 +8,7 @@ An MCMC routine providing a fit to an additive and multiplicative effects
 (AME) regression model for relative rank nomination data
 }
 \usage{
-ame_rrl(Y, X, cvar = TRUE, dcor = TRUE, R = 0, seed = 1, nscan = 50000, burn = 500, odens = 25, plot = TRUE, print = TRUE)
+ame_rrl(Y, X=NULL, cvar = TRUE, dcor = TRUE, R = 0, seed = 1, nscan = 50000, burn = 500, odens = 25, plot = TRUE, print = TRUE)
 }
 \arguments{
   \item{Y}{
@@ -48,9 +48,11 @@ logical: print results while running?
 \value{
 \item{BETA}{posterior samples of regression coefficients}
 \item{SABR}{posterior samples of Cov(a,b) and the dyadic correlation}
-\item{UVPM}{posterior mean of UV'}
-\item{APM}{posterior mean of additive row effects a}
-\item{BPM}{posterior mean of additive column effects b}
+\item{A}{posterior mean of additive row effects a}
+\item{B}{posterior mean of additive column effects b}
+\item{U}{posterior mean of multiplicative row effects u}
+\item{V}{posterior mean of multiplicative column effects b}
+\item{EZ}{estimate of expectation of Z matrix}
 \item{TT}{posterior predictive of number of triangles}
 \item{TR}{posterior predictive of fraction of reciprocated dyads}
 \item{TID}{posterior predictive of indegree distribution}

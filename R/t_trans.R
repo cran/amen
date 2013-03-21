@@ -8,5 +8,5 @@ function(Y)
     ci<-which(YS[i,]>0) 
     sm<-sm+ sum(YS[ci,ci],na.rm=TRUE) 
   }
- sm
+ sm/6
 }

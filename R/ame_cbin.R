@@ -1,17 +1,31 @@
 ame_cbin<-
-function(Y,X,odmax=rep(max(apply(Y>0,1,sum,na.rm=TRUE)),nrow(Y)),
+function(Y,X=NULL,odmax=rep(max(apply(Y>0,1,sum,na.rm=TRUE)),nrow(Y)),
                   rvar=TRUE,cvar=TRUE,dcor=TRUE,R=0,
-                  seed=1,nscan=5e4,burn=5e2,odens=25,plot=TRUE,print=TRUE)
+                  seed=1,nscan=5e4,burn=5e2,odens=25,plot=TRUE,print=TRUE,
+    intercept=TRUE)
 {
+set.seed(seed)
+
+
+## create intercept if X is NULL and intercept is TRUE
+if(is.null(X) & intercept) {  X<-matrix(1,nrow(Y),nrow(Y)) }
+if(is.null(X) & !intercept) {  X<-array(dim=c(nrow(Y),nrow(Y),0)) }
 
 Y<-1*(Y>0) 
 diag(Y)<-NA
 
-if( length(dim(X))==2 ) { X<-array(X,dim=c(dim(X),1)) }
-if(  !any(apply(X,3,function(x){var(c(x))})==0)  )
-{cat("WARNING: design matrix lacks an intercept","\n") }
 
-
+if(length(dim(X))==2 ) { X<-array(X,dim=c(dim(X),1)) }
+if(dim(X)[1]>0 &  !any(apply(X,3,function(x){var(c(x))})==0) )
+{
+  if(!intercept){ cat("WARNING: design matrix lacks an intercept","\n")  }
+  if(intercept)  # add an intercept
+  {
+    X1<-array(dim=c(0,0,1)+dim(X))
+    X1[,,1]<-1 ; X1[,,-1]<-X
+    X<-X1
+  }
+}
 
 ## marginal means and regression sums of squares
 Xr<-apply(X,c(1,3),sum)            # row sum
@@ -25,9 +39,9 @@ XXt<-t(mX)%*%mXt                   # crossproduct sums of squares
 if(length(odmax)==1) { odmax<-rep(odmax,nrow(Y)) }
 
 ## starting values
-fit<-probit_start(1*(Y>0),X)
-beta<-fit$beta; a<-fit$a*rvar ; b<-fit$b*cvar ; rho<-fit$rho*dcor
-Sab<-cov(cbind(a,b))
+fit<-probit_start(Y,X)
+beta<-fit$beta; a<-fit$a*rvar ; b<-fit$b*cvar ; rho<-.99*fit$rho*dcor
+Sab<- cov(cbind(a,b)) + diag(2)*rvar*cvar 
 Z<-Y 
 for(i in 1:nrow(Y))
 {  
@@ -60,7 +74,6 @@ td.obs<-t_degree(1*(Y>0))  # degree distributions
 odobs<-apply(Y>0,1,sum,na.rm=TRUE) # obs outdegrees
 idobs<-apply(Y>0,2,sum,na.rm=TRUE) # obs indegrees
 
-set.seed(seed)
 TT<-TR<-TID<-TOD<-SABR<-NULL
 BETA<-matrix(nrow=0,ncol=dim(X)[3]) ; colnames(BETA)<-dimnames(X)[[3]]
 UVPS<-U%*%t(V)*0
@@ -114,7 +127,8 @@ for(s in 1:(nscan+burn))
     if(print)
     {
       cat(s,round(apply(BETA,2,mean),2),":",round(apply(SABR,2,mean),2),"\n")
-      if(have.coda & length(TR)>3) {cat(round(effectiveSize(BETA)),"\n") } 
+      if(have.coda & length(TR)>3 &  length(beta)>0) 
+        {cat(round(effectiveSize(BETA)),"\n") } 
     } 
 
     ## plots
@@ -128,10 +142,13 @@ for(s in 1:(nscan+burn))
       matplot(SABR,type="l",lty=1)
       abline(h=mSABR,col=1:length(mSABR) )
 
+      if(length(beta)>0)
+      {
       mBETA<-apply(BETA,2,median)
       matplot(BETA,type="l",lty=1,col=1:length(mBETA))
       abline(h=mBETA,col=1:length(mBETA) )
       abline(h=0,col="gray")
+      }
  
       mod<-max(odobs) ; mid<-max(idobs)
       qod<-apply(TOD,2,quantile,prob=c(.975,.5,.25))
@@ -152,8 +169,20 @@ for(s in 1:(nscan+burn))
 
 colnames(SABR)<-c("va","cab","vb","rho") 
 
-fit<-list(BETA=BETA,SABR=SABR,UVPM=UVPS/length(TT),
-          APM=APS/length(TT),BPM=BPS/length(TT),
+###
+UVPM<-UVPS/length(TT)
+UDV<-svd(UVPM)
+U<-UDV$u[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)]) 
+V<-UDV$v[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)])
+A<-APS/length(TT)
+B<-BPS/length(TT) 
+rownames(A)<-rownames(B)<-rownames(U)<-rownames(V)<-rownames(Y)
+EZ<-Xbeta(X,apply(BETA,2,mean)) + outer(A,B,"+")+U%*%t(V)
+dimnames(EZ)<-dimnames(Y) 
+###
+
+
+fit<-list(BETA=BETA,SABR=SABR,A=A,B=B,U=U,V=V,EZ=EZ,
           TT=TT,TR=TR,TID=TID,TOD=TOD, 
           tt=tt.obs,tr=tr.obs,td=td.obs) 
 class(fit)<-"ame"

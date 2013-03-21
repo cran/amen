@@ -1,11 +1,13 @@
 ame_ord <-
-function(Y,X,
+function(Y,X=NULL,
                   rvar=TRUE,cvar=TRUE,dcor=TRUE,R=0,
                   seed=1,nscan=5e4,burn=5e2,odens=25,plot=TRUE,print=TRUE)
 {
+set.seed(seed)
 
 diag(Y)<-NA
 
+if(is.null(X)) {  X<-array(dim=c(nrow(Y),nrow(Y),0)) }
 if( length(dim(X))==2 ) { X<-array(X,dim=c(dim(X),1)) }
 if(  any(apply(X,3,function(x){var(c(x))})==0)  )
 {cat("WARNING: an intercept is not identifiable under this procedure","\n") }
@@ -24,22 +26,36 @@ uY<-sort(unique(c(Y)))
 W<-matrix(match(Y,uY),nrow(Y),nrow(Y))
 FY<-table(c(W)) ; FY<-FY/sum(FY) ; FY<-cumsum(FY) 
 
-
 Z<-matrix(qnorm(rank(Y,na.last="keep")/(nrow(Y)^2+1)),nrow=nrow(Y),ncol=ncol(Y))
-fit<-lm(c(Z)~ -1+apply(X,3,c))
-E<-matrix(0,nrow(Y),ncol(Y)) ; E[!is.na(Y)]<-fit$res
-a<-apply(E,1,mean) ; b<-apply(E,2,mean)
+
+if(dim(X)[3]>0)
+{
+  fit<-lm(c(Z)~ -1+apply(X,3,c)) 
+  beta<-fit$coef
+  res<-fit$res
+} 
+
+if(dim(X)[3]==0)
+{
+beta<-numeric(0)
+res<- Z[!is.na(Y)]
+}
+
+E <- matrix(NA, nrow(Y), ncol(Y))
+E[!is.na(Y)] <- res
+
+a<-apply(E,1,mean,na.rm=TRUE) ; b<-apply(E,2,mean,na.rm=TRUE)
 E<-E - outer(a,b,"+")
-rho<-cor(cbind(E[upper.tri(E)],t(E)[upper.tri(E)]))[1,2]
-beta<-fit$coef
-Sab<-cov(cbind(a,b))
+rho<- .99*cor(cbind(E[upper.tri(E)],t(E)[upper.tri(E)]))[1,2]
+Sab<- cov(cbind(a,b)) + diag(2)*rvar*cvar 
 diag(Z)<-apply(Z,1,max,na.rm=TRUE)
 U<-V<-matrix(0,nrow(Y),R)
 ZS<-simZ(Xbeta(X,beta) + outer(a,b,"+") ,rho )
 Z[is.na(Z)]<-ZS[is.na(Z)]
 
 ## MCMC setup
-qgof<-1-1/sqrt(nrow(Y))
+#qgof<-1-1/sqrt(nrow(Y)) 
+qgof<- FY[1]
 YT<-1*( Y> quantile(Y,qgof,na.rm=TRUE))
 tr.obs<-t_recip(YT)   # reciprocation
 tt.obs<-t_trans(YT)   # transitivity
@@ -47,7 +63,6 @@ td.obs<-t_degree(YT)  # degree distributions
 odobs<-apply(YT,1,sum,na.rm=TRUE) # obs outdegrees
 idobs<-apply(YT,2,sum,na.rm=TRUE) # obs indegrees
 
-set.seed(seed)
 TT<-TR<-TID<-TOD<-SABR<-NULL
 BETA<-matrix(nrow=0,ncol=dim(X)[3]) ; colnames(BETA)<-dimnames(X)[[3]]
 UVPS<-U%*%t(V)*0
@@ -109,7 +124,7 @@ for(s in 1:(nscan+burn))
     if(print)
     {
       cat(s,round(apply(BETA,2,mean),2),":",round(apply(SABR,2,mean),2),"\n")
-      if(have.coda & length(TR)>3) {cat(round(effectiveSize(BETA)),"\n") }
+      if(have.coda & length(TR)>3 & length(beta)>0) {cat(round(effectiveSize(BETA)),"\n") }
     }
 
     ## plots
@@ -123,10 +138,13 @@ for(s in 1:(nscan+burn))
       matplot(SABR,type="l",lty=1)
       abline(h=mSABR,col=1:length(mSABR) )
 
+      if(length(beta)>0)
+      {
       mBETA<-apply(BETA,2,median)
       matplot(BETA,type="l",lty=1,col=1:length(mBETA))
       abline(h=mBETA,col=1:length(mBETA) )
       abline(h=0,col="gray")
+      }
 
       mod<-max(odobs) ; mid<-max(idobs)
       qod<-apply(TOD,2,quantile,prob=c(.975,.5,.25))
@@ -147,8 +165,21 @@ for(s in 1:(nscan+burn))
 
 colnames(SABR)<-c("va","cab","vb","rho") 
 
-fit<-list(BETA=BETA,SABR=SABR,UVPM=UVPS/length(TT),
-          APM=APS/length(TT),BPM=BPS/length(TT),
+
+###
+UVPM<-UVPS/length(TT)
+UDV<-svd(UVPM)
+U<-UDV$u[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)]) 
+V<-UDV$v[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)])
+A<-APS/length(TT)
+B<-BPS/length(TT) 
+rownames(A)<-rownames(B)<-rownames(U)<-rownames(V)<-rownames(Y)
+EZ<-Xbeta(X,apply(BETA,2,mean)) + outer(A,B,"+")+U%*%t(V)
+dimnames(EZ)<-dimnames(Y) 
+###
+
+
+fit<-list(BETA=BETA,SABR=SABR,A=A,B=B,U=U,V=V,EZ=EZ,
           TT=TT,TR=TR,TID=TID,TOD=TOD,
           tt=tt.obs,tr=tr.obs,td=td.obs)
 class(fit)<-"ame"

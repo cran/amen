@@ -1,10 +1,13 @@
 ame_rrl <-
-function(Y,X,cvar=TRUE,dcor=TRUE,R=0,
+function(Y,X=NULL,cvar=TRUE,dcor=TRUE,R=0,
              seed=1,nscan=5e4,burn=5e2,odens=25,plot=TRUE,print=TRUE)
 {
+set.seed(seed)
+
 
 diag(Y)<-NA
 
+if(is.null(X)) {  X<-array(dim=c(nrow(Y),nrow(Y),0)) }
 if( length(dim(X))==2 ) { X<-array(X,dim=c(dim(X),1)) }
 if(  any(apply( apply(X,c(1,3),var),2,sum )==0 ) )
 {cat("WARNING: row effects are not estimable using this procedure ","\n") }
@@ -35,7 +38,8 @@ if(warn){cat("WARNING: Random reordering applied to break ties in ranks\n")}
 
 #################### model and starting values 
 fit<-probit_start(Y,X)
-beta<-fit$beta ; rho<-fit$rho*dcor ; Sab<-matrix(c(0,0,0,var(fit$b)*cvar),2,2)
+beta<-fit$beta ; rho<- .99*fit$rho*dcor ; 
+Sab<-matrix(c(0,0,0,(1+var(fit$b))*cvar),2,2)
 Z<-Y
 for(i in 1:nrow(Y)) { Z[i,-i]<-qnorm(rank(Y[i,-i])/nrow(Y)) }
 diag(Z)<-apply(Z,1,max,na.rm=TRUE)
@@ -50,7 +54,6 @@ td.obs<-t_degree(1*(Y>0))  # degree distributions
 odobs<-apply(Y>0,1,sum,na.rm=TRUE) # obs outdegrees
 idobs<-apply(Y>0,2,sum,na.rm=TRUE) # obs indegrees
 
-set.seed(seed)
 TT<-TR<-TID<-TOD<-SABR<-NULL
 BETA<-matrix(nrow=0,ncol=dim(X)[3]) ; colnames(BETA)<-dimnames(X)[[3]]
 UVPS<-U%*%t(V)*0
@@ -99,7 +102,7 @@ for(s in 1:(nscan+burn))
     if(print)
     {
       cat(s,round(apply(BETA,2,mean),2),":",round(apply(SABR,2,mean),2),"\n")
-      if(have.coda & length(TR)>3) {cat(round(effectiveSize(BETA)),"\n") } 
+      if(have.coda & length(TR)>3 & length(beta)>0) {cat(round(effectiveSize(BETA)),"\n") } 
     } 
 
     ## plots
@@ -109,14 +112,18 @@ for(s in 1:(nscan+burn))
       hist(a,main="",col="lightblue",prob=TRUE)
       hist(b,main="",col="lightblue",prob=TRUE)
 
+      
       mSABR<-apply(SABR,2,median)
       matplot(SABR,type="l",lty=1)
       abline(h=mSABR,col=1:length(mSABR) )
 
+      if(length(beta)>0)
+      {
       mBETA<-apply(BETA,2,median)
       matplot(BETA,type="l",lty=1,col=1:length(mBETA))
       abline(h=mBETA,col=1:length(mBETA) )
       abline(h=0,col="gray")
+      }
  
       mod<-max(odobs) ; mid<-max(idobs)
       qod<-apply(TOD,2,quantile,prob=c(.975,.5,.25))
@@ -137,8 +144,19 @@ for(s in 1:(nscan+burn))
 
 colnames(SABR)<-c("va","cab","vb","rho") 
 
-fit<-list(BETA=BETA,SABR=SABR,UVPM=UVPS/length(TT),
-          APM=APS/length(TT),BPM=BPS/length(TT),
+###
+UVPM<-UVPS/length(TT)
+UDV<-svd(UVPM)
+U<-UDV$u[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)]) 
+V<-UDV$v[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)])
+A<-APS/length(TT)
+B<-BPS/length(TT) 
+rownames(A)<-rownames(B)<-rownames(U)<-rownames(V)<-rownames(Y)
+EZ<-Xbeta(X,apply(BETA,2,mean)) + outer(A,B,"+")+U%*%t(V)
+dimnames(EZ)<-dimnames(Y) 
+###
+
+fit<-list(BETA=BETA,SABR=SABR,A=A,B=B,U=U,V=V,EZ=EZ,
           TT=TT,TR=TR,TID=TID,TOD=TOD, 
           tt=tt.obs,tr=tr.obs,td=td.obs) 
 class(fit)<-"ame"

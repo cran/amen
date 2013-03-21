@@ -1,17 +1,31 @@
 ame_bin <-
-function(Y,X,
+function(Y,X=NULL,
                   rvar=TRUE,cvar=TRUE,dcor=TRUE,R=0,
-                  seed=1,nscan=5e4,burn=5e2,odens=25,plot=TRUE,print=TRUE)
+                  seed=1,nscan=5e4,burn=5e2,odens=25,plot=TRUE,print=TRUE,
+      intercept=TRUE)
 {
+set.seed(seed)
+
+
+## create intercept if X is NULL and intercept is TRUE
+if(is.null(X) & intercept) {  X<-matrix(1,nrow(Y),nrow(Y)) } 
+if(is.null(X) & !intercept) {  X<-array(dim=c(nrow(Y),nrow(Y),0)) }
 
 ## make sure data are binary and missing diag
 Y<-1*(Y>0)
 diag(Y)<-NA
 
-if( length(dim(X))==2 ) { X<-array(X,dim=c(dim(X),1)) }
-if(  !any(apply(X,3,function(x){var(c(x))})==0)  )
-{cat("WARNING: design matrix lacks an intercept","\n") }
-
+if(length(dim(X))==2 ) { X<-array(X,dim=c(dim(X),1)) }
+if(dim(X)[1]>0 &  !any(apply(X,3,function(x){var(c(x))})==0) )
+{ 
+  if(!intercept){ cat("WARNING: design matrix lacks an intercept","\n")  } 
+  if(intercept)  # add an intercept
+  {  
+    X1<-array(dim=c(0,0,1)+dim(X))        
+    X1[,,1]<-1 ; X1[,,-1]<-X 
+    X<-X1 
+  }
+}
 
 
 ## marginal means and regression sums of squares
@@ -24,10 +38,10 @@ XXt<-t(mX)%*%mXt                   # crossproduct sums of squares
 
 ## starting values
 fit<-probit_start(Y,X)
-beta<-fit$beta; a<-fit$a*rvar ; b<-fit$b*cvar ; rho<-fit$rho*dcor
-Sab<-cov(cbind(a,b))
+beta<-fit$beta; a<-fit$a*rvar ; b<-fit$b*cvar ; rho<-.99*fit$rho*dcor
+Sab<-cov(cbind(a,b))   + diag(2)*rvar*cvar  
 EZ<-Xbeta(X,beta) + outer(a,b,"+")  
-EZ<-EZ/sd(c(EZ))  # see Bailey and Alex's comments
+EZ<-EZ/max(1,sd(c(EZ))) 
 lb<- c(-Inf,0)[Y+1] ; ub<-c(0,Inf)[Y+1] 
 lb[is.na(lb)]<- -Inf ; ub[is.na(ub)]<- Inf
 Z<- EZ+matrix(qnorm(runif(prod(dim(Y)),pnorm(lb-EZ),pnorm(ub-EZ))),
@@ -43,8 +57,9 @@ td.obs<-t_degree(Y)  # degree distributions
 odobs<-apply(Y,1,sum,na.rm=TRUE) # obs outdegrees
 idobs<-apply(Y,2,sum,na.rm=TRUE) # obs indegrees
 
-set.seed(seed)
 TT<-TR<-TID<-TOD<-SABR<-NULL
+YPS<-matrix(0,nrow(Y),nrow(Y))
+
 BETA<-matrix(nrow=0,ncol=dim(X)[3]) ; colnames(BETA)<-dimnames(X)[[3]]
 UVPS<-U%*%t(V)*0
 APS<-BPS<-rep(0,nrow(Y))
@@ -89,15 +104,19 @@ for(s in 1:(nscan+burn))
     APS<-APS+a ; BPS<-BPS+b 
  
     ## simulate gof stats
-    YS<-simY_bin(Xbeta(X,beta)+outer(a,b,"+")+U%*%t(V),rho); YS[is.na(Y)]<-NA 
+    YS<-simY_bin(Xbeta(X,beta)+outer(a,b,"+")+U%*%t(V),rho)
+    YPS<-YPS+YS
+    YS[is.na(Y)]<-NA 
     TR<-c(TR,t_recip(YS))
     TT<-c(TT,t_trans(YS))
     td<-t_degree(YS) ; TOD<- rbind(TOD,td$od) ; TID<- rbind(TID,td$id) 
 
     if(print)
     {
-      cat(s,round(apply(BETA,2,mean),2),":",round(apply(SABR,2,mean),2),"\n")
-      if(have.coda & length(TR)>3) {cat(round(effectiveSize(BETA)),"\n") } 
+      cat(s,round(apply(BETA,2,mean),2),":",round(apply(SABR,2,mean),2),"\n") 
+      
+      if(have.coda & length(TR)>3 & length(beta)>0) 
+          {cat(round(effectiveSize(BETA)),"\n") } 
     } 
 
     ## plots
@@ -111,10 +130,14 @@ for(s in 1:(nscan+burn))
       matplot(SABR,type="l",lty=1)
       abline(h=mSABR,col=1:length(mSABR) )
 
-      mBETA<-apply(BETA,2,median)
+
+      if(length(beta)>0) 
+      {
+      mBETA<-apply(BETA,2,median) 
       matplot(BETA,type="l",lty=1,col=1:length(mBETA))
       abline(h=mBETA,col=1:length(mBETA) )
       abline(h=0,col="gray")
+      }
  
       mod<-max(odobs) ; mid<-max(idobs)
       qod<-apply(TOD,2,quantile,prob=c(.975,.5,.25))
@@ -134,8 +157,21 @@ for(s in 1:(nscan+burn))
 
 colnames(SABR)<-c("va","cab","vb","rho") 
 
-fit<-list(BETA=BETA,SABR=SABR,UVPM=UVPS/length(TT),
-          APM=APS/length(TT),BPM=BPS/length(TT),
+###
+UVPM<-UVPS/length(TT)
+UDV<-svd(UVPM)
+U<-UDV$u[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)]) 
+V<-UDV$v[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)])
+A<-APS/length(TT)
+B<-BPS/length(TT) 
+rownames(A)<-rownames(B)<-rownames(U)<-rownames(V)<-rownames(Y)
+EZ<-Xbeta(X,apply(BETA,2,mean)) + outer(A,B,"+")+U%*%t(V)
+dimnames(EZ)<-dimnames(Y) 
+###
+
+
+fit<-list(BETA=BETA,SABR=SABR,A=A,B=B,U=U,V=V,EZ=EZ,
+          YPM=YPS/length(TT),
           TT=TT,TR=TR,TID=TID,TOD=TOD, 
           tt=tt.obs,tr=tr.obs,td=td.obs) 
 class(fit)<-"ame"
