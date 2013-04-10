@@ -1,8 +1,40 @@
 ame_rrl <-
-function(Y,X=NULL,cvar=TRUE,dcor=TRUE,R=0,
+function(Y,X=NULL,Xcol=NULL,cvar=TRUE,dcor=TRUE,R=0,
              seed=1,nscan=5e4,burn=5e2,odens=25,plot=TRUE,print=TRUE)
 {
 set.seed(seed)
+
+
+### combine dyad, row and col covariates
+pd<-length(X)/nrow(Y)^2
+pc<-length(Xcol)/nrow(Y)
+
+if(pd+pc>0)
+{
+  Xall<-array(dim=c(nrow(Y),nrow(Y),pc+pd))
+  dnX<-NULL
+
+  if(pd>0)
+  {
+    Xall[,,1:pd]<-X
+    dnX<-paste0(dimnames(X)[[3]],rep(".dyad",pd))
+  }
+
+  if(pc>0)
+  {
+    if(length(Xcol)==nrow(Y)) { Xcol<-matrix(Xcol,nrow(Y),1)  }
+    Xcola<-array(dim=c(nrow(Y),nrow(Y),ncol(Xcol)))
+    for(j in 1:ncol(Xcol)){ Xcola[,,j]<-t(matrix( Xcol[,j], nrow(Y),nrow(Y))) }
+    Xall[ ,,pd+1:pc]<- Xcola
+    dnX<-c(dnX,paste0(colnames(Xcol),rep(".col" ,pc)))
+  }
+
+  if(pd+pc>1) { dimnames(Xall)[[3]]<- dnX }
+  if(pd+pc==1){ dimnames(Xall)[[3]]<- list(dnX) }
+  X<-Xall 
+}
+###
+
 
 
 diag(Y)<-NA
@@ -147,8 +179,8 @@ colnames(SABR)<-c("va","cab","vb","rho")
 ###
 UVPM<-UVPS/length(TT)
 UDV<-svd(UVPM)
-U<-UDV$u[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)]) 
-V<-UDV$v[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)])
+U<-UDV$u[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)],nrow=R)
+V<-UDV$v[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)],nrow=R)
 A<-APS/length(TT)
 B<-BPS/length(TT) 
 rownames(A)<-rownames(B)<-rownames(U)<-rownames(V)<-rownames(Y)
@@ -156,7 +188,7 @@ EZ<-Xbeta(X,apply(BETA,2,mean)) + outer(A,B,"+")+U%*%t(V)
 dimnames(EZ)<-dimnames(Y) 
 ###
 
-fit<-list(BETA=BETA,SABR=SABR,A=A,B=B,U=U,V=V,EZ=EZ,
+fit<-list(BETA=BETA,SABR=SABR,A=A,B=B,U=U,V=V,UVPM=UVPM,EZ=EZ,
           TT=TT,TR=TR,TID=TID,TOD=TOD, 
           tt=tt.obs,tr=tr.obs,td=td.obs) 
 class(fit)<-"ame"

@@ -1,10 +1,50 @@
 ame_bin <-
-function(Y,X=NULL,
+function(Y,X=NULL,Xrow=NULL,Xcol=NULL,
                   rvar=TRUE,cvar=TRUE,dcor=TRUE,R=0,
                   seed=1,nscan=5e4,burn=5e2,odens=25,plot=TRUE,print=TRUE,
       intercept=TRUE)
 {
 set.seed(seed)
+
+### combine dyad, row and col covariates
+pd<-length(X)/nrow(Y)^2
+pr<-length(Xrow)/nrow(Y)
+pc<-length(Xcol)/nrow(Y)
+
+if(pd+pr+pc>0)
+{
+  Xall<-array(dim=c(nrow(Y),nrow(Y),pr+pc+pd))
+  dnX<-NULL
+
+  if(pd>0)
+  {
+    Xall[,,1:pd]<-X
+    dnX<-paste0(dimnames(X)[[3]],rep(".dyad",pd))
+  }
+
+  if(pr>0)
+  {
+    if(length(Xrow)==nrow(Y)) { Xrow<-matrix(Xrow,nrow(Y),1)  }
+    Xrowa<-array(dim=c(nrow(Y),nrow(Y),ncol(Xrow)))
+    for(j in 1:ncol(Xrow)){ Xrowa[,,j]<-matrix( Xrow[,j], nrow(Y),nrow(Y)) }
+    Xall[ ,,pd+1:pr]<- Xrowa
+    dnX<-c(dnX,paste0(colnames(Xrow),rep(".row" ,pr)))
+  }
+
+  if(pc>0)
+  {
+    if(length(Xcol)==nrow(Y)) { Xcol<-matrix(Xcol,nrow(Y),1)  }
+    Xcola<-array(dim=c(nrow(Y),nrow(Y),ncol(Xcol)))
+    for(j in 1:ncol(Xcol)){ Xcola[,,j]<-t(matrix( Xcol[,j], nrow(Y),nrow(Y))) }
+    Xall[ ,,pd+pr+1:pc]<- Xcola
+    dnX<-c(dnX,paste0(colnames(Xcol),rep(".col" ,pc)))
+  }
+
+  if(pd+pr+pc>1) { dimnames(Xall)[[3]]<- dnX }
+  if(pd+pr+pc==1){ dimnames(Xall)[[3]]<- list(dnX) }
+  X<-Xall
+}
+###
 
 
 ## create intercept if X is NULL and intercept is TRUE
@@ -160,8 +200,8 @@ colnames(SABR)<-c("va","cab","vb","rho")
 ###
 UVPM<-UVPS/length(TT)
 UDV<-svd(UVPM)
-U<-UDV$u[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)]) 
-V<-UDV$v[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)])
+U<-UDV$u[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)],nrow=R) 
+V<-UDV$v[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)],nrow=R)
 A<-APS/length(TT)
 B<-BPS/length(TT) 
 rownames(A)<-rownames(B)<-rownames(U)<-rownames(V)<-rownames(Y)
@@ -170,7 +210,7 @@ dimnames(EZ)<-dimnames(Y)
 ###
 
 
-fit<-list(BETA=BETA,SABR=SABR,A=A,B=B,U=U,V=V,EZ=EZ,
+fit<-list(BETA=BETA,SABR=SABR,A=A,B=B,U=U,V=V,UVPM=UVPM,EZ=EZ,
           YPM=YPS/length(TT),
           TT=TT,TR=TR,TID=TID,TOD=TOD, 
           tt=tt.obs,tr=tr.obs,td=td.obs) 

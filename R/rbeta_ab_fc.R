@@ -2,7 +2,7 @@ rbeta_ab_fc <-
 function(Z,Sab,rho,X,mX,mXt,XX,XXt,Xr,Xc,s2=1) 
 {
   ### 
-  p<-dim(X)[3]
+  p<-dim(X)[3] 
   Se<-matrix(c(1,rho,rho,1),2,2)*s2
   iSe2<-mhalf(solve(Se))
   td<-iSe2[1,1] ; to<-iSe2[1,2]
@@ -56,7 +56,8 @@ function(Z,Sab,rho,X,mX,mXt,XX,XXt,Xr,Xc,s2=1)
     }
   }
   ##
-   
+  if(dim(X)[3]==0){     beta<-numeric(0) }
+ 
   if(p>0) 
   { 
   V<-solve(Qb)

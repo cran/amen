@@ -1,9 +1,54 @@
 ame_nrm<-
-function (Y, X=NULL, rvar = TRUE, cvar = TRUE, dcor = TRUE, R = 0, 
+function (Y, X=NULL, Xrow=NULL, Xcol=NULL, 
+    rvar = TRUE, cvar = TRUE, dcor = TRUE, R = 0, 
     seed = 1, nscan = 50000, burn = 500, odens = 25, plot = TRUE, 
     print = TRUE,intercept=TRUE) 
 { 
 set.seed(seed)
+
+
+### combine dyad, row and col covariates
+pd<-length(X)/nrow(Y)^2
+pr<-length(Xrow)/nrow(Y)
+pc<-length(Xcol)/nrow(Y)
+
+if(pd+pr+pc>0)
+{
+  Xall<-array(dim=c(nrow(Y),nrow(Y),pr+pc+pd))
+  dnX<-NULL
+
+  if(pd>0)
+  {
+    Xall[,,1:pd]<-X
+    dnX<-paste0(dimnames(X)[[3]],rep(".dyad",pd))
+  }
+
+  if(pr>0)
+  {
+    if(length(Xrow)==nrow(Y)) { Xrow<-matrix(Xrow,nrow(Y),1)  }
+    Xrowa<-array(dim=c(nrow(Y),nrow(Y),ncol(Xrow)))
+    for(j in 1:ncol(Xrow)){ Xrowa[,,j]<-matrix( Xrow[,j], nrow(Y),nrow(Y)) }
+    Xall[ ,,pd+1:pr]<- Xrowa
+    dnX<-c(dnX,paste0(colnames(Xrow),rep(".row" ,pr)))
+  }
+
+  if(pc>0)
+  {
+    if(length(Xcol)==nrow(Y)) { Xcol<-matrix(Xcol,nrow(Y),1)  }
+    Xcola<-array(dim=c(nrow(Y),nrow(Y),ncol(Xcol)))
+    for(j in 1:ncol(Xcol)){ Xcola[,,j]<-t(matrix( Xcol[,j], nrow(Y),nrow(Y))) }
+    Xall[ ,,pd+pr+1:pc]<- Xcola
+    dnX<-c(dnX,paste0(colnames(Xcol),rep(".col" ,pc)))
+  }
+
+  if(pd+pr+pc>1) { dimnames(Xall)[[3]]<- dnX }
+  if(pd+pr+pc==1){ dimnames(Xall)[[3]]<- list(dnX) }
+  X<-Xall
+}
+###
+
+
+
 
 
     ## create intercept if X is NULL and intercept is TRUE
@@ -43,21 +88,22 @@ set.seed(seed)
     beta<-numeric(0) 
     res<- Y[!is.na(Y)]  
     }
- 
-
 
     E <- matrix(NA, nrow(Y), ncol(Y))
     E[!is.na(Y)] <- res
-    a <- apply(E, 1, mean, na.rm = TRUE)
-    b <- apply(E, 2, mean, na.rm = TRUE)
+    a <- apply(E, 1, mean, na.rm = TRUE)*rvar
+    b <- apply(E, 2, mean, na.rm = TRUE)*cvar
     E <- E - outer(a, b, "+")
     CE <- cov(cbind(E[upper.tri(E)], t(E)[upper.tri(E)]),use="complete.obs")
     s2 <- 0.5 * (CE[1, 1] + CE[2, 2])
-    rho <- .99*cov2cor(CE)[1, 2]
+    rho <- dcor*(.99)*cov2cor(CE)[1, 2]
     Sab<-cov(cbind(a,b)) + diag(2)*rvar*cvar 
+    Z<-Y 
     EZ <- Xbeta(X, beta) + outer(a, b, "+")
-    Z <- simY_nrm(EZ, rho, s2)
-    diag(Z) <- rnorm(nrow(Y), diag(EZ), sqrt(s2))
+    ZS <- simY_nrm(EZ, rho, s2)
+    diag(ZS) <- rnorm(nrow(Y), diag(EZ), sqrt(s2)) 
+    Z[is.na(Y)]<-ZS[is.na(Y)]
+
     U <- V <- matrix(0, nrow(Y), R) 
 
     YT<- 1*(Y>quantile(c(Y),.95,na.rm=TRUE))
@@ -73,38 +119,50 @@ set.seed(seed)
     APS <- BPS <- rep(0, nrow(Y))
     have.coda <- suppressWarnings(try(require(coda, quietly = TRUE), 
         silent = TRUE))
-    for (s in 1:(nscan + burn)) {
-        tmp <- rbeta_ab_fc(Z - U %*% t(V), Sab, rho, X, mX, mXt, 
-            XX, XXt, Xr, Xc, s2)
-        beta <- tmp$beta
-        a <- tmp$a * rvar
-        b <- tmp$b * cvar
-        EZ <- Xbeta(X, beta) + outer(a, b, "+") + U %*% t(V)
-        ZS <- simY_nrm(EZ, rho, s2)
-        Z[is.na(Y)] <- ZS[is.na(Y)]
-        diag(Z) <- rnorm(nrow(Y), diag(EZ), sqrt(s2))
-        if (rvar & cvar) {
-            Sab <- solve(rwish(solve(diag(2) + crossprod(cbind(a, 
-                b))), 3 + nrow(Z)))
-        }
-        if (rvar & !cvar) {
-            Sab[1, 1] <- 1/rgamma(1, (1 + nrow(Y))/2, (1 + sum(a^2))/2)
-        }
-        if (!rvar & cvar) {
-            Sab[2, 2] <- 1/rgamma(1, (1 + nrow(Y))/2, (1 + sum(b^2))/2)
-        }
-        if (dcor) {
-            rho <- rrho_mh(Z - (Xbeta(X, beta) + outer(a, b, 
-                "+") + U %*% t(V)), rho,s2)
-        }
-        s2 <- rs2_fc(Z - (Xbeta(X, beta) + outer(a, b, "+") + 
-            U %*% t(V)), rho)
-        if (R > 0) {
-            UV <- rUV_fc(Z - (Xbeta(X, beta) + outer(a, b, "+")), 
-                U, V, rho, s2)
-            U <- UV$U
-            V <- UV$V
-        }
+for (s in 1:(nscan + burn)) 
+{ 
+  ## update beta, a b
+  tmp <- rbeta_ab_fc(Z-U%*%t(V), Sab, rho, X, mX, mXt,XX, XXt, Xr, Xc, s2)
+  beta <- tmp$beta
+  a <- tmp$a * rvar
+  b <- tmp$b * cvar 
+
+  ## update Z - impute diagonal and other missing values 
+  EZ <- Xbeta(X, beta) + outer(a, b, "+") + U %*% t(V) 
+  ZS <- simY_nrm(EZ, rho, s2)  
+  diag(ZS) <- rnorm(nrow(Y), diag(EZ), sqrt(s2))
+  Z[is.na(Y)] <- ZS[is.na(Y)]  
+
+  ## update Sab 
+  if(rvar & cvar)
+  {
+    Sab<-solve(rwish(solve(diag(2) + crossprod(cbind(a, b))), 3 + nrow(Z)))
+  }
+  if (rvar & !cvar) 
+  {
+    Sab[1, 1] <- 1/rgamma(1, (1 + nrow(Y))/2, (1 + sum(a^2))/2)
+  }
+  if (!rvar & cvar) 
+  {
+    Sab[2, 2] <- 1/rgamma(1, (1 + nrow(Y))/2, (1 + sum(b^2))/2)
+  }
+
+  ## update rho
+  if (dcor) 
+  {
+    rho <- rrho_mh(Z - (Xbeta(X, beta) + outer(a, b, "+") + U %*% t(V)), rho,s2)
+  }
+  s2 <- rs2_fc(Z - (Xbeta(X, beta) + outer(a, b, "+") + U %*% t(V)), rho)
+
+  ## update U,V
+  if (R > 0) 
+  {
+    UV <- rUV_fc(Z - (Xbeta(X, beta) + outer(a, b, "+")), U, V, rho, s2)
+    U <- UV$U
+    V <- UV$V
+  } 
+
+  ## output
         if (s%%odens == 0 & s <= burn) {
             cat(round(100 * s/burn, 2), " pct burnin complete \n")
         }
@@ -180,8 +238,8 @@ set.seed(seed)
 ###
 UVPM<-UVPS/length(TT)
 UDV<-svd(UVPM)
-U<-UDV$u[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)]) 
-V<-UDV$v[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)])
+U<-UDV$u[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)],nrow=R)
+V<-UDV$v[,seq(1,R,length=R)]%*%diag(sqrt(UDV$d)[seq(1,R,length=R)],nrow=R)
 A<-APS/length(TT)
 B<-BPS/length(TT) 
 rownames(A)<-rownames(B)<-rownames(U)<-rownames(V)<-rownames(Y)
@@ -190,7 +248,7 @@ dimnames(EZ)<-dimnames(Y)
 ###
 
 
-    fit <- list(BETA = BETA, SABR = SABR, A=A,B=B,U=U,V=V,EZ=EZ,
+    fit <- list(BETA = BETA, SABR = SABR, A=A,B=B,U=U,V=V,UVPM=UVPM,EZ=EZ,
         TT = TT, 
         TR = TR, TID = TID, TOD = TOD, tt = tt.obs, tr = tr.obs, 
         td = td.obs)

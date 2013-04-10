@@ -8,7 +8,7 @@ An MCMC routine providing a fit to an additive and multiplicative effects
 (AME) regression model for normal relational data
 }
 \usage{
-ame_nrm(Y, X=NULL, rvar = TRUE, cvar = TRUE, dcor = TRUE, R = 0, seed = 1, nscan = 50000, burn = 500, odens = 25, plot = TRUE, print = TRUE,intercept=TRUE)
+ame_nrm(Y, X=NULL, Xrow=NULL, Xcol=NULL,  rvar = TRUE, cvar = TRUE, dcor = TRUE, R = 0, seed = 1, nscan = 50000, burn = 500, odens = 25, plot = TRUE, print = TRUE,intercept=TRUE)
 }
 \arguments{
   \item{Y}{
@@ -17,6 +17,8 @@ an n x n square relational matrix
   \item{X}{
 an n x n x p array of covariates
 }
+\item{Xrow}{ an n x pr matrix of nodal row covariates }
+\item{Xcol}{ an n x pc matrix of nodal column covariates }
   \item{rvar}{
 logical: fit row random effects?
 }
@@ -58,7 +60,8 @@ logical: fit model with an intercept?
 \item{A}{posterior mean of additive row effects a}
 \item{B}{posterior mean of additive column effects b}
 \item{U}{posterior mean of multiplicative row effects u}
-\item{V}{posterior mean of multiplicative column effects b}
+\item{V}{posterior mean of multiplicative column effects v} 
+\item{UVPM}{posterior mean of UV}
 \item{EZ}{estimate of expectation of Z matrix}
 \item{TT}{posterior predictive of number of triangles}
 \item{TR}{posterior predictive of fraction of reciprocated dyads}
