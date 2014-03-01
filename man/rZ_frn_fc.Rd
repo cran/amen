@@ -35,7 +35,7 @@ observed outdegree
 }
 }
 \details{
-  simulates Z under the contraints
+  simulates Z under the constraints
    (1)  Y[i,j]>Y[i,k]                => Z[i,j]>Z[i,k]  ,  
    (2)  Y[i,j]>0                     => Z[i,j]>0     , 
    (3)  Y[i,j]=0 & odobs[i]<odmax[i] => Z[i,j]<0

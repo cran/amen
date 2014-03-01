@@ -29,7 +29,7 @@ list of ranked individuals, from least to most preferred in each row
 }
 }
 \details{
-  simulates Z under the contraints
+  simulates Z under the constraints
    (1)  Y[i,j]>Y[i,k]                => Z[i,j]>Z[i,k] 
 }
 \value{
@@ -43,7 +43,7 @@ a square matrix, the new value of Z
 ## The function is currently defined as
 rZ_rrl_fc<-function(Z,EZ,rho,Y,YL)
 {
-  # simulates Z under the contraints
+  # simulates Z under the constraints
   # (1)  Y[i,j]>Y[i,k] => Z[i,j]>Z[i,k]
 
   sz<-sqrt(1-rho^2)

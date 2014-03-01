@@ -17,7 +17,7 @@ square matrix giving the expected value of the relational matrix
 dyadic correlation
 }
   \item{s2}{
-dyaidic variance
+dyadic variance
 }
 }
 \value{

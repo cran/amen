@@ -22,7 +22,7 @@ dyadic correlation
   \item{X}{
 n x n x p covariate array
 }
-  \item{mX}{design matrix (matricizied verion of X) 
+  \item{mX}{design matrix (matricizied version of X) 
 }
   \item{mXt}{ dyad-transposed design matrix 
 }

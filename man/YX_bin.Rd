@@ -21,6 +21,6 @@ List of 2
 }
 \examples{
 data(YX_bin)
-t_trans(YX_bin$Y) 
+gofstats(YX_bin$Y) 
 }
 \keyword{datasets}

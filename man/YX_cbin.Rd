@@ -1,13 +1,15 @@
-\name{YX_frn}
-\alias{YX_frn}
+\name{YX_cbin}
+\alias{YX_cbin}
 \docType{data}
 \title{
-Fixed rank nomination data and covariates
+Censored binary nomination data and covariates
 }
 \description{
-a synthetic dataset that includes fixed rank nomination data as well as information on eight covariates
+a synthetic dataset that includes 
+relational data where the number of nominations per row is censored at 10, 
+along with information on eight covariates
 }
-\usage{data(YX_frn)}
+\usage{data(YX_cbin)}
 \format{
   The format is:
 List of 2
@@ -19,7 +21,7 @@ List of 2
   .. ..$ : chr [1:8] "intercept" "rgpa" "rsmoke" "cgpa" ...
 }
 \examples{
-data(YX_frn)
-gofstats(YX_frn$Y) 
+data(YX_cbin)
+gofstats(YX_cbin$Y) 
 }
 \keyword{datasets}

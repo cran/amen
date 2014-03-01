@@ -21,6 +21,7 @@ List of 2
 }
 \examples{
 data(YX_nrm)
-t_trans(YX_nrm$Y>quantile(YX_nrm$Y,.95,na.rm=TRUE))
+gofstats(YX_nrm$Y)
+
 }
 \keyword{datasets}

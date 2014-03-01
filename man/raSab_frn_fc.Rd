@@ -7,7 +7,7 @@ Simulate a and Sab from full conditional distributions under frn likelihood
 Simulate a and Sab from full conditional distributions under frn likelihood
 }
 \usage{
-raSab_frn_fc(Z, Y, YL, a, b, Sab, odobs, odmax, SS = round(sqrt(nrow(Z))))
+raSab_frn_fc(Z, Y, YL, a, b, Sab, odmax, odobs, SS = round(sqrt(nrow(Z))))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -29,11 +29,11 @@ current value of column effects
   \item{Sab}{
 current value of Cov(a,b)
 }
-  \item{odobs}{
-observed outdegree
-}
   \item{odmax}{
 a scalar or vector giving the maximum number of nominations for each individual
+}
+  \item{odobs}{
+observed outdegree
 }
   \item{SS}{
 number of iterations
@@ -50,7 +50,8 @@ Peter Hoff
 
 \examples{
 ## The function is currently defined as
-function (Z, Y, YL, a, b, Sab, odobs, odmax, SS = round(sqrt(nrow(Z)))) 
+raSab_frn_fc<-
+function (Z, Y, YL, a, b, Sab,  odmax, odobs, SS = round(sqrt(nrow(Z))))
 {
     E <- Z - a \%*\% t(rep(1, nrow(Z)))
     lba <- -E[cbind(1:nrow(Z), YL[, 1])]
@@ -60,12 +61,14 @@ function (Z, Y, YL, a, b, Sab, odobs, odmax, SS = round(sqrt(nrow(Z))))
     for (ss in 1:SS) {
         ea <- b * Sab[1, 2]/Sab[2, 2]
         sa <- sqrt(Sab[1, 1] - Sab[1, 2]^2/Sab[2, 2])
-        a <- ea + sa * qnorm(runif(nrow(Z), pnorm((lba - ea)/sa), 
+        a <- ea + sa * qnorm(runif(nrow(Z), pnorm((lba - ea)/sa),
             pnorm((uba - ea)/sa)))
-        Sab <- solve(rwish(solve(diag(2) + crossprod(cbind(a, 
+        Sab <- solve(rwish(solve(diag(2) + crossprod(cbind(a,
             b))), 3 + nrow(Z)))
     }
     list(Z = E + a \%*\% t(rep(1, nrow(Z))), a = a, Sab = Sab)
-  }
+}
+
+
 }
 

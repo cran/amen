@@ -24,7 +24,7 @@ a square matrix identifying where missing values should be maintained
 }
 }
 \value{
-a square matrix, where higher values represent stronger relationshis
+a square matrix, where higher values represent stronger relationships
 }
 \author{
 Peter Hoff

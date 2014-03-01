@@ -7,19 +7,14 @@ Simulate an ordinal relational matrix
 Simulates an ordinal relational matrix having a particular marginal distribution
 }
 \usage{
-simY_ord(EZ, rho, uY, FY)
+simY_ord(EZ, rho, Y)
 }
 \arguments{
   \item{EZ}{
 square matrix giving the expected value of the latent Z matrix
 }
-  \item{rho}{
-dyadic correlation
-}
-  \item{uY}{
-support of the ordinal outcome variable 
-}
-  \item{FY}{cumulative CDF for \code{uY}
+\item{rho}{ scalar giving the within-dyad correlation }
+  \item{Y}{ordinal relational data matrix 
 }
 }
 \value{
@@ -30,13 +25,13 @@ Peter Hoff
 }
 
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
-
-## The function is currently defined as
-function (EZ, rho, uY, FY) 
+## The function is currently defined as 
+simY_ord<-
+function (EZ, rho,Y)
 {
+
+    uY<-sort(unique(c(Y)))
+    FY<-table(c(Y)) ; FY<-FY/sum(FY) ; FY<-cumsum(FY)
     ZS <- simZ(EZ, rho)
     diag(ZS) <- NA
     qZ <- quantile(ZS, FY[-length(FY)], na.rm = TRUE)
@@ -45,7 +40,8 @@ function (EZ, rho, uY, FY)
         YS[(YS == max(uY)) & ZS <= qZ[w]] <- uY[w]
     }
     YS
-  }
+}
+
 }
 
 
