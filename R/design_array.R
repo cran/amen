@@ -1,3 +1,22 @@
+#' Computes the design socioarray of covariate values
+#' 
+#' Computes the design socioarray of covariate values for an AME fit
+#' 
+#' 
+#' @usage design_array(Xrow=NULL,Xcol=NULL,Xdyad=NULL,intercept=TRUE,n)
+#' @param Xrow an n x pr matrix of row covariates
+#' @param Xcol an n x pc matrix of column covariates
+#' @param Xdyad an n x n x pd array of dyadic covariates
+#' @param intercept logical
+#' @param n number of rows/columns
+#' @return an n x n x (pr+pc+pd+intercept) 3-way array
+#' @author Peter Hoff
+#' @examples
+#' 
+#' ## The function is currently defined as 
+#' design_array(intercept=TRUE,n=10) 
+#' 
+#' @export design_array
 design_array<-function(Xrow=NULL,Xcol=NULL,Xdyad=NULL,intercept=TRUE,n)
 { 
 

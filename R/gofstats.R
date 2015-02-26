@@ -1,3 +1,21 @@
+#' Goodness of fit statistics
+#' 
+#' Goodness of fit statistics evaluating second and third-order dependence
+#' patterns
+#' 
+#' 
+#' @usage gofstats(Y)
+#' @param Y a relational data matrix
+#' @return a vector of gof statistics
+#' @author Peter Hoff
+#' @examples
+#' 
+#' data(YX_nrm) 
+#' 
+#' gofstats(YX_nrm$Y) 
+#' 
+#' 
+#' @export gofstats
 gofstats<-function(Y)
 {
   sd.rowmean<-sd(rowMeans(Y,na.rm=TRUE) ,na.rm=TRUE) 

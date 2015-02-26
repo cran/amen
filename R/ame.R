@@ -1,4 +1,81 @@
 ###
+
+
+
+
+#' AME model fitting routine
+#' 
+#' An MCMC routine providing a fit to an additive and multiplicative effects
+#' (AME) regression model to relational data of various types
+#' 
+#' This command provides posterior inference for parameters in AME models of
+#' relational data, assuming one of six possible data types/models:
+#' 
+#' "nrm": A normal AME model.
+#' 
+#' "bin": A binary probit AME model.
+#' 
+#' "ord": An ordinal probit AME model. An intercept is not identifiable in this
+#' model.
+#' 
+#' "cbin": An AME model for censored binary data.  The value of 'odmax'
+#' specifies the maximum number of links each row may have.
+#' 
+#' "frn": An AME model for fixed rank nomination networks. A higher value of
+#' the rank indicates a stronger relationship. The value of 'odmax' specifies
+#' the maximum number of links each row may have.
+#' 
+#' "rrl": An AME model based on the row ranks. This is appropriate if the
+#' relationships across rows are not directly comparable in terms of scale. An
+#' intercept, row random effects and row regression effects are not estimable
+#' for this model.
+#' 
+#' @usage ame(Y, Xdyad=NULL, Xrow=NULL, Xcol=NULL, rvar = !(model=="rrl") ,
+#' cvar = TRUE, dcor = TRUE, R = 0, model="nrm",
+#' intercept=!is.element(model,c("rrl","ord")),
+#' odmax=rep(max(apply(Y>0,1,sum,na.rm=TRUE)),nrow(Y)), seed = 1, nscan =
+#' 50000, burn = 500, odens = 25, plot=TRUE, print = TRUE, gof=TRUE)
+#' @param Y an n x n square relational matrix of relations. See model below for
+#' various data types.
+#' @param Xdyad an n x n x pd array of covariates
+#' @param Xrow an n x pr matrix of nodal row covariates
+#' @param Xcol an n x pc matrix of nodal column covariates
+#' @param rvar logical: fit row random effects?
+#' @param cvar logical: fit column random effects?
+#' @param dcor logical: fit a dyadic correlation?
+#' @param R integer: dimension of the multiplicative effects (can be zero)
+#' @param model character: one of "nrm","bin","ord","cbin","frn","rrl" - see
+#' the details below
+#' @param intercept logical: fit model with an intercept?
+#' @param odmax a scalar integer or vector of length n giving the maximum
+#' number of nominations that each node may make - used for "frn" and "cbin"
+#' models
+#' @param seed random seed
+#' @param nscan number of iterations of the Markov chain (beyond burn-in)
+#' @param burn burn in for the Markov chain
+#' @param odens output density for the Markov chain
+#' @param plot logical: plot results while running?
+#' @param print logical: print results while running?
+#' @param gof logical: calculate goodness of fit statistics?
+#' @return \item{BETA}{posterior samples of regression coefficients}
+#' \item{SABR}{posterior samples of Cov(a,b) and the dyadic correlation}
+#' 
+#' \item{APM}{posterior mean of additive row effects a} \item{BPM}{posterior
+#' mean of additive column effects b} \item{U}{posterior mean of multiplicative
+#' row effects u} \item{V}{posterior mean of multiplicative column effects v}
+#' \item{UVPM}{posterior mean of UV} \item{EZ}{estimate of expectation of Z
+#' matrix} \item{YPM}{posterior mean of Y (for imputing missing values)}
+#' \item{GOF}{observed (first row) and posterior predictive (remaining rows)
+#' values of four goodness-of-fit statistics}
+#' @author Peter Hoff
+#' @examples
+#' 
+#' data(YX_frn) 
+#' fit<-ame(YX_frn$Y,YX_frn$X,burn=5,nscan=5,odens=1,model="frn")
+#' # you should run the Markov chain much longer than this
+#' 
+#'  
+#' @export ame
 ame<-
 function (Y,Xdyad=NULL, Xrow=NULL, Xcol=NULL, 
     rvar = !(model=="rrl") , cvar = TRUE, dcor = TRUE, R = 0,
@@ -106,7 +183,7 @@ function (Y,Xdyad=NULL, Xrow=NULL, Xcol=NULL,
   colnames(SABR) <- c("va", "cab", "vb", "rho", "ve")
   names(APS)<-names(BPS)<- rownames(U)<-rownames(V)<-rownames(Y) 
 
-  have_coda<-suppressWarnings(try(require(coda,quietly = TRUE),silent=TRUE))
+  have_coda<-suppressWarnings(try(requireNamespace("coda",quietly = TRUE),silent=TRUE))
 
   ## marginal means and regression sums of squares
   Xr<-apply(X,c(1,3),sum)            # row sum
@@ -213,7 +290,7 @@ function (Y,Xdyad=NULL, Xrow=NULL, Xcol=NULL,
         cat(s,round(apply(BETA,2,mean),2),":",round(apply(SABR,2,mean),2),"\n")
         if (have_coda & nrow(SABR) > 3 & length(beta)>0) 
         {
-          cat(round(effectiveSize(BETA)), "\n")
+          cat(round(coda::effectiveSize(BETA)), "\n")
         }
       }
       if(plot) 
