@@ -12,7 +12,7 @@
 #' software was supported in part by NICHD grant R01HD067509. 
 #' 
 #' \tabular{ll}{ Package: \tab amen\cr Type: \tab Package\cr Version: \tab
-#' 1.0 \cr Date: \tab 2015-02-26 \cr License: \tab GPL-3 \cr }
+#' 1.1 \cr Date: \tab 2015-05-31 \cr License: \tab GPL-3 \cr }
 #' 
 #' @name amen-package
 #' @aliases amen-package amen
@@ -235,8 +235,8 @@ NULL
 #' \itemize{
 #' \item \code{cc}: a socioarray of ordinal levels of military 
 #' cooperation (positive) and conflict (negative), every 5 years; 
-#' \item \code{distance}: between-country distance; 
-#' \item \code{gdp}: country gdp every 5 years; 
+#' \item \code{distance}: between-country distance (in thousands of kilometers); 
+#' \item \code{gdp}: country gdp in dollars every 5 years; 
 #' \item \code{polity}: country polity every 5 years.  
 #' }
 #' @source 
@@ -248,19 +248,26 @@ NULL
 
 #' @title Comtrade data
 #'
-#' @description 
-#' Summary of trade flows between countries over a ten year period. 
-#'
-#' @format 
-#' A four-way array of yearly change in log trade between countries,
-#' measured in 2000 US dollars across several commodity classes. The 
-#' four dimensions of the array index exporting nation, importing nation, 
-#' commidity and year, respectively. 
+#' @description
+#' Eleven years of import and export data between 229 countries. 
+#' The data use the SITC Rev. 1 commodity classification, aggregated at the 
+#' first level (AG1). 
+#'  
+#' @format A list consisting of a socioarray \code{Trade} and a vector 
+#' \code{dollars2010} of inflation rates. The socioarray gives 
+#' yearly trade volume (exports and imports) 
+#' in dollars for 10 different commodity classes 
+#' for eleven years between 229 countries. This gives a five-way 
+#' array. The first index is the reporting country, so 
+#' \code{Trade[i,j,t,k,1]} is what \code{i} reports for exports to 
+#' \code{j}, but in general this is not the same as 
+#' \code{Trade[j,i,t,k,2]}, what \code{j} reports as importing from \code{i}. 
 #' 
-#' @source \url{http://comtrade.un.org/}
+#' @source \url{http://comtrade.un.org/}, \url{http://www.measuringworth.com/}
 #' 
 #' @name comtrade
 NULL
+
 
 #' @title Lazega's law firm data
 #'
@@ -295,7 +302,7 @@ NULL
 #' A valued sociomatrix (Y) and matrix of nodal attributes (X) for 
 #' students in community 3 of the AddHealth study. 
 #' \itemize{
-#' \item E: A sociomatrix in which the value of the edge corresponds to an ad-hoc measure of intensity of the relation. Note that students were only allowed to nominate up to 5 male friends and 5 female friends. 
+#' \item Y: A sociomatrix in which the value of the edge corresponds to an ad-hoc measure of intensity of the relation. Note that students were only allowed to nominate up to 5 male friends and 5 female friends. 
 #' \item X: Matrix of students attributes, including sex, race (1=white, 2=black, 3=hispanic, 4=asian, 5=mixed/other) and grade. 
 #' } 
 #' See \url{http://moreno.ss.uci.edu/data.html#adhealth} for more details. 
@@ -322,20 +329,41 @@ NULL
 #' @usage data(addhealthc9)
 NULL
 
-#' @title Conflicts in the 90s
+
+
+#' @title International relations in the 90s
 #'
 #' @description 
-#' A relational dataset recording the total number of militarized disputes
-#' or events between countries in the 1990s, along with nodal and dyadic 
-#' covariates. 
+#' A relational dataset recording 
+#' a variety of nodal and dyadic variables on countries in the 1990s,
+#' including information on conflicts, trade and other variables. 
+#' Except for the conflict variable, the variables are averages
+#' across the decade. 
 #'
-#' @format A list consisting of a sociomatrix \code{conflicts}, an array of 
-#' dyadic covariates \code{dyadvars} and nodal covariates \code{nodevars}. 
+#' @format 
+#' A list consisting of a socioarray \code{dyadvars} of 
+#' dyadic variables and matrix  \code{nodevars} of nodal variables. 
+#' The dyadic variables include
+#' \itemize{
+#' \item total number of conflicts;
+#' \item exports (in billions of dollars);
+#' \item distance (in thousands of kilometers);
+#' \item number of shared IGOs (averages across the years);
+#' \item polity interaction. 
+#' } 
+#' The nodal variables include
+#' \itemize{
+#' \item population (in millions); 
+#' \item gdp (in billions of dollars); 
+#' \item polity 
+#' }
 #' 
 #' @source Michael Ward.
 #' 
-#' @name conflict90s
+#' @name IR90s
 NULL
+
+
 
 #' @title Dutch college data
 #'
@@ -343,6 +371,9 @@ NULL
 #' Longitudinal relational measurements and nodal characteristics 
 #' of Dutch college students, described in 
 #' van de Bunt, van Duijn, and Snijders (1999). 
+#' The time interval between the first four measurements was 
+#' three weeks, whereas the interval between the last three 
+#' was six weeks. 
 #' 
 #' @format A list consisting of a socioarray \code{Y} and a matrix 
 #' \code{X}  of static nodal attributes. The relational 
@@ -361,5 +392,27 @@ NULL
 #' @name dutchcollege
 NULL
 
+
+
+
+#' @title Sheep dominance data
+#'
+#' @description 
+#' Number of dominance encounters between 28 female bighorn sheep. 
+#' Cell (i,j) records the number of times sheep i dominated sheep j. 
+#' From Hass (1991). 
+#'  
+#' @format 
+#' A list consisting of the following:
+#' \itemize{
+#' \item \code{dom}: a directed socioarray recording the number of 
+#' dominance encounters. 
+#' \item \code{age}: the age of each sheep in years. 
+#' }
+#' 
+#' @source 
+#' \url{http://moreno.ss.uci.edu/data.html#sheep}
+#' @name sheep
+NULL
 
 

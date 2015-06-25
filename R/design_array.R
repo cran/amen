@@ -11,11 +11,6 @@
 #' @param n number of rows/columns
 #' @return an n x n x (pr+pc+pd+intercept) 3-way array
 #' @author Peter Hoff
-#' @examples
-#' 
-#' ## The function is currently defined as 
-#' design_array(intercept=TRUE,n=10) 
-#' 
 #' @export design_array
 design_array<-function(Xrow=NULL,Xcol=NULL,Xdyad=NULL,intercept=TRUE,n)
 { 
@@ -82,11 +77,11 @@ if(dim(X)[[3]]==1){ dimnames(X)[[3]]<- list(dnX) }
 
 
 ### missing values
-if(any(is.na(X)))
+if( sum(is.na(X)) > sum( is.na(apply(X,3,diag)) ) )
 {
   cat("WARNING: replacing NAs in design matrix with zeros","\n")
-  X[is.na(X)]<-0
-}
+} 
+X[is.na(X)]<-0
 ###
 
 
