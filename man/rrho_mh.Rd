@@ -4,14 +4,21 @@
 \alias{rrho_mh}
 \title{Metropolis update for dyadic correlation}
 \usage{
-rrho_mh(E, rho, s2 = 1)
+rrho_mh(Z, rho, s2 = 1,offset=0, asp=NULL)
 }
 \arguments{
-\item{E}{square residual relational matrix}
+\item{Z}{n X n normal relational matrix}
 
 \item{rho}{current value of rho}
 
 \item{s2}{current value of s2}
+
+\item{offset}{matrix of the same dimension as Z. It is assumed that 
+Z-offset is equal to dyadic noise, so the offset should contain any 
+additive and multiplicative effects (such as 
+\code{Xbeta(X,beta+ U\%*\%t(V) +  outer(a,b,"+")  }   )}
+
+\item{asp}{use arc sine prior (TRUE) or uniform prior (FALSE)}
 }
 \value{
 a new value of rho
@@ -22,4 +29,3 @@ Metropolis update for dyadic correlation
 \author{
 Peter Hoff
 }
-

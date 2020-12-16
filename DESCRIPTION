@@ -1,30 +1,40 @@
 Package: amen
 Title: Additive and Multiplicative Effects Models for Networks and
         Relational Data
-Version: 1.3
-Author: Peter Hoff, Bailey Fosdick, Alex Volfovsky, Yanjun He
+Version: 1.4.4
+Authors@R: c(person("Peter","Hoff",role=c("aut","cre"),
+                    email="peter.hoff@duke.edu"),
+             person("Bailey","Fosdick",role=c("aut")),
+             person("Alex","Volfovsky",role=c("aut")),
+             person("Yanjun","He",role=c("ctb")) )
 Description: Analysis of dyadic network and relational data using additive and
     multiplicative effects (AME) models. The basic model includes
     regression terms, the covariance structure of the social relations model
     (Warner, Kenny and Stoto (1979) <DOI:10.1037/0022-3514.37.10.1742>, 
     Wong (1982) <DOI:10.2307/2287296>), and multiplicative factor
     models (Hoff(2009) <DOI:10.1007/s10588-008-9040-4>). 
-    Four different link functions accommodate different
-    relational data structures, including binary/network data (bin), normal
-    relational data (nrm), ordinal relational data (ord) and data from
-    fixed-rank nomination schemes (frn).  Several of these link functions are
+    Several different link functions accommodate different
+    relational data structures, including binary/network data, normal
+    relational data, zero-inflated positive outcomes using a tobit model, ordinal relational data and data from
+    fixed-rank nomination schemes. Several of these link functions are
     discussed in Hoff, Fosdick, Volfovsky and Stovel (2013) 
     <DOI:10.1017/nws.2013.17>. Development of this
     software was supported in part by NIH grant R01HD067509.
 Maintainer: Peter Hoff <peter.hoff@duke.edu>
+URL: https://github.com/pdhoff/amen
+BugReports: https://github.com/pdhoff/amen/issues
 License: GPL-3
-Date: 2017-05-23
+Date: 2020-12-01
 LazyData: true
-Depends: R (>= 2.10)
-Suggests: coda,network,knitr
+Depends: R (>= 3.5.0)
+Suggests: coda,network,knitr,rmarkdown
 VignetteBuilder: knitr
-RoxygenNote: 5.0.1
+RoxygenNote: 7.1.1
 NeedsCompilation: no
-Packaged: 2017-05-24 13:47:19 UTC; pdh10
+Packaged: 2020-12-15 18:34:55 UTC; pdhoff
+Author: Peter Hoff [aut, cre],
+  Bailey Fosdick [aut],
+  Alex Volfovsky [aut],
+  Yanjun He [ctb]
 Repository: CRAN
-Date/Publication: 2017-05-25 00:31:52 UTC
+Date/Publication: 2020-12-16 14:00:09 UTC

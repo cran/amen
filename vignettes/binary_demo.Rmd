@@ -1,0 +1,59 @@
+---
+title: "Modeling a binary network outcome"
+author: "Peter Hoff"
+date: "`r substring(Sys.time(),1,10)`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Modeling a binary network outcome}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+Load the library:
+```{r}
+library(amen)
+```
+
+Set up the data:
+```{r}
+data(lazegalaw)
+
+Y<-lazegalaw$Y[,,2]
+Xn<-lazegalaw$X[,c(2,4,5,6)]
+Xd<-lazegalaw$Y[,,-2]
+Xd<-array( c(Xd,outer(Xn[,4],Xn[,4],"==")),dim=dim(Xd)+c(0,0,1))
+dimnames(Xd)[[3]]<-c("advice","cowork","samepractice")
+
+dimnames(Xd)[[3]]
+dimnames(Xn)[[2]]
+```	
+
+plot the network with "practice" denoted by plotting color:
+```{r,results='hide',message=FALSE}
+netplot(lazegalaw$Y[,,2],ncol=Xn[,4])
+```
+
+```{r,fig.keep='last',results='hide',cache=TRUE}
+fitSRRM<-ame(Y, Xd=Xd, Xr=Xn, Xc=Xn, family="bin")
+```
+
+```{r}
+summary(fitSRRM) 
+```
+
+
+
+```{r,fig.keep='last',results='hide',cache=TRUE}
+fitAME<-ame(Y, Xd=Xd, Xr=Xn, Xc=Xn, R=3, family="bin")
+```
+
+```{r}
+summary(fitAME) 
+```
+
+
+
+
+
+
+

@@ -8,6 +8,8 @@
 #' 
 #' "nrm": A normal AME model.
 #' 
+#' "tob": A tobit AME model. 
+#' 
 #' "bin": A binary probit AME model.
 #' 
 #' "ord": An ordinal probit AME model. An intercept is not identifiable in this
@@ -25,13 +27,14 @@
 #' intercept, row random effects and row regression effects are not estimable
 #' for this model.
 #' 
-#' @usage ame(Y, Xdyad=NULL, Xrow=NULL, Xcol=NULL, rvar = !(model=="rrl") ,
-#' cvar = TRUE,  dcor = !symmetric, nvar=TRUE, R = 0, model="nrm",
-#' intercept=!is.element(model,c("rrl","ord")),
+#' @usage ame(Y, Xdyad=NULL, Xrow=NULL, Xcol=NULL, family, R=0, rvar = !(family=="rrl") ,
+#' cvar = TRUE,  dcor = !symmetric, nvar=TRUE,
+#' intercept=!is.element(family,c("rrl","ord")),
 #' symmetric=FALSE,
 #' odmax=rep(max(apply(Y>0,1,sum,na.rm=TRUE)),nrow(Y)), seed = 1, nscan =
-#' 10000, burn = 500, odens = 25, plot=TRUE, print = TRUE, gof=TRUE)
-#' @param Y an n x n square relational matrix of relations. See model below for
+#' 10000, burn = 500, odens = 25, plot=TRUE, print = TRUE, gof=TRUE,
+#' prior=list())
+#' @param Y an n x n square relational matrix of relations. See family below for
 #' various data types.
 #' @param Xdyad an n x n x pd array of covariates
 #' @param Xrow an n x pr matrix of nodal row covariates
@@ -41,13 +44,13 @@
 #' @param dcor logical: fit a dyadic correlation (asymmetric case)?
 #' @param nvar logical: fit nodal random effects (symmetric case)?
 #' @param R integer: dimension of the multiplicative effects (can be zero)
-#' @param model character: one of "nrm","bin","ord","cbin","frn","rrl" - see
+#' @param family character: one of "nrm","tob","bin","ord","cbin","frn","rrl" - see
 #' the details below
 #' @param intercept logical: fit model with an intercept? 
 #' @param symmetric logical: Is the sociomatrix symmetric by design?
 #' @param odmax a scalar integer or vector of length n giving the maximum
 #' number of nominations that each node may make - used for "frn" and "cbin"
-#' models
+#' families
 #' @param seed random seed
 #' @param nscan number of iterations of the Markov chain (beyond burn-in)
 #' @param burn burn in for the Markov chain
@@ -55,6 +58,7 @@
 #' @param plot logical: plot results while running?
 #' @param print logical: print results while running?
 #' @param gof logical: calculate goodness of fit statistics?
+#' @param prior list: A list of hyperparameters for the prior distribution
 #' @return \item{BETA}{posterior samples of regression coefficients}
 #' \item{VC}{posterior samples of the variance parameters}
 #' \item{APM}{posterior mean of additive row effects a} \item{BPM}{posterior
@@ -71,21 +75,21 @@
 #' @examples
 #' 
 #' data(YX_frn) 
-#' fit<-ame(YX_frn$Y,YX_frn$X,burn=5,nscan=5,odens=1,model="frn")
+#' fit<-ame(YX_frn$Y,YX_frn$X,burn=5,nscan=5,odens=1,family="frn")
 #' # you should run the Markov chain much longer than this
 #' 
 #'  
 #' @export ame
 ame<-function (Y,Xdyad=NULL, Xrow=NULL, Xcol=NULL, 
-       rvar = !(model=="rrl") , cvar = TRUE, dcor = !symmetric, 
+       family,R=0,
+       rvar = !(family=="rrl") , cvar = TRUE, dcor = !symmetric, 
        nvar=TRUE, 
-       R = 0,
-       model="nrm",
-       intercept=!is.element(model,c("rrl","ord")), 
+       intercept=!is.element(family,c("rrl","ord")), 
        symmetric=FALSE,
        odmax=rep(max(apply(Y>0,1,sum,na.rm=TRUE)),nrow(Y)),
        seed = 1, nscan = 10000, burn = 500, odens = 25,
-       plot=TRUE, print = TRUE, gof=TRUE)
+       plot=TRUE, print = TRUE, gof=TRUE,
+       prior=list())
 { 
  
   # set random seed
@@ -95,11 +99,11 @@ ame<-function (Y,Xdyad=NULL, Xrow=NULL, Xcol=NULL,
   # set diag to NA
   diag(Y) <- NA 
 
-  # force binary if binary model specified
-  if(is.element(model,c("bin","cbin"))) { Y<-1*(Y>0) } 
+  # force binary if binary family specified
+  if(is.element(family,c("bin","cbin"))) { Y<-1*(Y>0) } 
 
   # observed and max outdegrees 
-  if(is.element(model,c("cbin","frn","rrl")))
+  if(is.element(family,c("cbin","frn","rrl")))
   {
     odobs<-apply(Y>0,1,sum,na.rm=TRUE) 
     if(length(odmax)==1) { odmax<-rep(odmax,nrow(Y)) }
@@ -108,29 +112,62 @@ ame<-function (Y,Xdyad=NULL, Xrow=NULL, Xcol=NULL,
   # some settings for symmetric case
   if(symmetric){ Xcol<-Xrow ; rvar<-cvar<-nvar }
 
+  # g-prior setting for normal data 
+  if(family=="nrm" & is.null(prior$g))
+  { 
+    prior$g<-sum(!is.na(Y))*var(c(Y),na.rm=TRUE)
+  }
+
+  # g-prior setting for normal data 
+  if(family=="tob" & is.null(prior$g))
+  {
+    prior$g<-sum(!is.na(Y))*var(c(Y),na.rm=TRUE)*4 
+  }
+
+  # set informative priors if family isnt normal or tobit
+  if(family!="nrm" & family!="tob")
+  {  
+    ydist<-table(Y)
+    ymode<-as.numeric(names(ydist)[ ydist==max(ydist) ])[1] 
+    ## eg, in a sparse binary network, ymode will be zero 
+    YB<-1*(Y!=ymode) 
+    ybar<-mean(YB,na.rm=TRUE) ; mu<-qnorm(ybar)
+    E<- (YB - ybar)/dnorm(qnorm(ybar)) ; diag(E)<-0
+    a<-rowMeans(E,na.rm=TRUE)  ; a[is.na(a)]<-0 
+    b<-colMeans(E,na.rm=TRUE)  ; b[is.na(b)]<-0
+    vscale<-mean(diag(cov(cbind(a,b))))
+    PHAT<-pnorm(mu+outer(a,b,"+"))
+    vdfmlt<-.25/mean(PHAT*(1-PHAT))
+    if(is.null(prior$Sab0)){ prior$Sab0<-diag(2)*vscale }
+    if(is.null(prior$Suv0)){ prior$Suv0<-diag(2*R)*vscale } 
+    if(is.null(prior$eta0)){ prior$eta0<-round(4*vdfmlt) } 
+    if(is.null(prior$kappa0)){ prior$kappa0<-round((2*R+2)*vdfmlt) }  
+    if(is.null(prior$g)){ prior$g<-sum(!is.na(Y)) }
+  }
+
   # construct design matrix
   n<-nrow(Y) 
   pr<-length(Xrow)/n
   pc<-length(Xcol)/n
   pd<-length(Xdyad)/n^2
-  X<-design_array(Xrow,Xcol,Xdyad,intercept,nrow(Y)) 
+  X<-design_array(Xrow,Xcol,Xdyad,intercept,n) 
 
   # design matrix warning for rrl 
-  if( model=="rrl" & any(apply(apply(X,c(1,3),var),2,sum)==0) 
+  if( family=="rrl" & any(apply(apply(X,c(1,3),var),2,sum)==0) 
                    & !any( apply(X,3,function(x){var(c(x))})==0) ) 
   {
     cat("WARNING: row effects are not estimable using this procedure ","\n")
   } 
 
   # design matrix warning for rrl and ord
-  if( is.element(model,c("ord","rrl")) & 
+  if( is.element(family,c("ord","rrl")) & 
       any( apply(X,3,function(x){var(c(x))})==0 ) )
   {
     cat("WARNING: an intercept is not estimable using this procedure ","\n")
   } 
   
   # construct matrix of ranked nominations for frn, rrl 
-  if(is.element(model,c("frn","rrl")))
+  if(is.element(family,c("frn","rrl")))
   {
     ymx<-max(apply(1*(Y>0),1,sum,na.rm=TRUE))
     YL<-NULL
@@ -147,17 +184,22 @@ ame<-function (Y,Xdyad=NULL, Xrow=NULL, Xcol=NULL,
   }
 
   # starting Z values
-  if(model=="nrm") { Z<-Y }
-  if(model=="ord") { Z<-matrix(zscores(Y),nrow(Y),ncol(Y)) } 
-  if(model=="rrl") { Z<-matrix(t(apply(Y,1,zscores)),nrow(Y),ncol(Y)) }  
-  if(model=="bin")
+  if(family=="nrm") { Z<-Y }
+  if(family=="tob") { 
+    Z<-Y 
+    trunc<- !is.na(Z) && Z<0  
+    Z[trunc]<-qnorm(runif(sum(trunc),0,.5))*2*sd(Z[!trunc],na.rm=TRUE) 
+  } 
+  if(family=="ord") { Z<-matrix(zscores(Y),nrow(Y),ncol(Y)) } 
+  if(family=="rrl") { Z<-matrix(t(apply(Y,1,zscores)),nrow(Y),ncol(Y)) }  
+  if(family=="bin")
   { 
     Z<-matrix(zscores(Y),nrow(Y),nrow(Y)) 
     z01<- .5* ( max(Z[Y==0],na.rm=TRUE) + min(Z[Y==1],na.rm=TRUE) ) 
     Z<-Z - z01
   } 
 
-  if(is.element(model,c("cbin","frn")))
+  if(is.element(family,c("cbin","frn")))
   {
     Z<-Y
     for(i in 1:nrow(Y))
@@ -189,23 +231,48 @@ ame<-function (Y,Xdyad=NULL, Xrow=NULL, Xcol=NULL,
   Z[is.na(Z)]<-ZA[is.na(Z)] 
    
 
-  # other starting values
-  beta<-rep(0,dim(X)[3]) 
-  s2<-1 
-  rho<-0
-  Sab<-cov(cbind(a,b))*tcrossprod(c(rvar,cvar))
-  U<-V<-matrix(0, nrow(Y), R)  
+  #### other starting values
 
+  # beta
+  beta<-rep(0,dim(X)[3]) 
+  if(dim(X)[3]>0) 
+  {
+    beta<-solve( attributes(X)$XX + diag(dim(X)[3]))%*% 
+        crossprod(attributes(X)$mX,c(Z)) 
+  } 
+
+  # a,b,Sab
+  E<-Z-Xbeta(X,beta)  
+  a<-rowMeans(E,na.rm=TRUE)*rvar ; b<-colMeans(E,na.rm=TRUE)*cvar
+  a[is.na(a)]<-0 ; b[is.na(b)]<-0 
+  Sab<-cov(cbind(a,b))*tcrossprod(c(rvar,cvar))
+
+  # s2, rho
+  E<-E-outer(a,b,"+")  
+  s2<-1
+  if(family=="nrm"){s2<-mean(E^2)}
+  if(family=="tob"){s2<-mean(E^2)} 
+  rho<-cor( c(E[upper.tri(E)]), c(t(E)[upper.tri(E)]) )*dcor  
+
+  # U,V 
+  U<-V<-matrix(0,nrow(Y),R) 
+  if(R>0) 
+  {  
+    sE<-svd(E)
+    U<-sE$u[,1:R,drop=FALSE]%*%diag(sqrt(sE$d[1:R]),nrow=R)
+    V<-sE$v[,1:R,drop=FALSE]%*%diag(sqrt(sE$d[1:R]),nrow=R)
+  }
 
   # output items
   BETA <- matrix(nrow = 0, ncol = dim(X)[3] - pr*symmetric)
   VC<-matrix(nrow=0,ncol=5-3*symmetric) 
   UVPS <- U %*% t(V) * 0 
   APS<-BPS<- rep(0,nrow(Y))  
-  YPS<-matrix(0,nrow(Y),ncol(Y)) ; dimnames(YPS)<-dimnames(Y)
-  GOF<-matrix(gofstats(Y),1,4)  
+  YPS<-matrix(0,nrow(Y),ncol(Y)) ; dimnames(YPS)<-dimnames(Y) 
+  gofY<-gofstats(Y)
+  GOF<-matrix(gofY,1,length(gofY))  
   rownames(GOF)<-"obs"
-  colnames(GOF)<- c("sd.rowmean","sd.colmean","dyad.dep","triad.dep")
+  colnames(GOF)<-names(gofY)
   names(APS)<-names(BPS)<- rownames(U)<-rownames(V)<-rownames(Y)
  
   # names of parameters, asymmetric case 
@@ -227,14 +294,6 @@ ame<-function (Y,Xdyad=NULL, Xrow=NULL, Xcol=NULL,
     colnames(BETA)<-c(bni,bnn,bnd) 
   }    
 
-  # marginal means and regression sums of squares
-  Xr<-apply(X,c(1,3),sum)            # row sum
-  Xc<-apply(X,c(2,3),sum)            # col sum
-  mX<- apply(X,3,c)                  # design matrix
-  mXt<-apply(aperm(X,c(2,1,3)),3,c)  # dyad-transposed design matrix
-  XX<-t(mX)%*%mX                     # regression sums of squares
-  XXt<-t(mX)%*%mXt                   # crossproduct sums of squares
-
   # MCMC 
   have_coda<-suppressWarnings(
                try(requireNamespace("coda",quietly = TRUE),silent=TRUE))
@@ -244,45 +303,65 @@ ame<-function (Y,Xdyad=NULL, Xrow=NULL, Xcol=NULL,
 
     # update Z 
     EZ<-Xbeta(X, beta) + outer(a, b, "+") + U %*% t(V)
-    if(model=="nrm"){ Z<-rZ_nrm_fc(Z,EZ,rho,s2,Y) } 
-    if(model=="bin"){ Z<-rZ_bin_fc(Z,EZ,rho,Y) }
-    if(model=="ord"){ Z<-rZ_ord_fc(Z,EZ,rho,Y) }
-    if(model=="cbin"){Z<-rZ_cbin_fc(Z,EZ,rho,Y,odmax,odobs)}
-    if(model=="frn"){ Z<-rZ_frn_fc(Z,EZ,rho,Y,YL,odmax,odobs)}
-    if(model=="rrl"){ Z<-rZ_rrl_fc(Z,EZ,rho,Y,YL)} 
+    if(family=="nrm"){ Z<-rZ_nrm_fc(Z,EZ,rho,s2,Y) } 
+    if(family=="tob"){ Z<-rZ_tob_fc(Z,EZ,rho,s2,Y) }  
+    if(family=="bin"){ Z<-rZ_bin_fc(Z,EZ,rho,Y) }
+    if(family=="ord"){ Z<-rZ_ord_fc(Z,EZ,rho,Y) }
+    if(family=="cbin"){Z<-rZ_cbin_fc(Z,EZ,rho,Y,odmax,odobs)}
+    if(family=="frn"){ Z<-rZ_frn_fc(Z,EZ,rho,Y,YL,odmax,odobs)}
+    if(family=="rrl"){ Z<-rZ_rrl_fc(Z,EZ,rho,Y,YL)} 
 
     # update s2
-    if (model=="nrm") s2<-rs2_fc(Z-EZ,rho)  
+    if(family=="nrm"){ s2<-rs2_fc(Z-EZ,rho,nu0=prior$nu0,s20=prior$s20)  } 
+    if(family=="tob"){ s2<-rs2_fc(Z-EZ,rho,nu0=prior$nu0,s20=prior$s20)  } 
+
+    # update rho
+    if(dcor){ rho <- rrho_mh(Z-EZ,rho,s2,asp = prior$asp)} 
+
+    # shrink rho - symmetric case 
+    if(symmetric){ rho<-min(.9999,1-1/sqrt(s)) }
 
     # update beta, a b
-    tmp <- rbeta_ab_fc(Z-U%*%t(V), Sab, rho, X, mX, mXt,XX, XXt, Xr, Xc, s2)
-    beta <- tmp$beta
+    tmp <- rbeta_ab_fc(Z-U%*%t(V),Sab,rho,X,s2,iV0=prior$iV0,m0=prior$m0,
+                       g=prior$g) 
+    beta <- tmp$beta 
     a <- tmp$a * rvar
     b <- tmp$b * cvar 
     if(symmetric){ a<-b<-(a+b)/2 }
 
+    # update U,V
+    if (R > 0)
+    {
+      E<-Z-(Xbeta(X,beta)+outer(a,b,"+"))  ; if(symmetric){ E<-.5*(E+t(E)) }
+      shrink<- (s>.5*burn)
+      if(symmetric){ UV<-rUV_sym_fc(E, U, V, s2) }
+      if(!symmetric)
+      {
+        Suv<-rSuv_fc(U,V,Suv0=prior$Suv0,kappa0=prior$kappa0)
+        UV<-rUV_fc(E, U, V,Suv,rho, s2)
+      }
+      U<-UV$U ; V<-UV$V
+    }
+
     # update Sab - full SRM
     if(rvar & cvar & !symmetric)
     {
-      if(is.element(model,c("nrm","ord")))
-      { 
-        Sab<-solve(rwish(solve(diag(2)+crossprod(cbind(a, b))),3+nrow(Z))) 
-      }
-
-      if(model=="bin")
+      Sab<-rSab_fc(a,b,Sab0=prior$Sab0,eta0=prior$eta0)    
+      if(family=="bin")
       {
-        tmp<-raSab_bin_fc(Z,Y,a,b,Sab) ; Z<-tmp$Z;Sab<-tmp$Sab;a<-tmp$a
-      }
-
-      if(model=="cbin")
-      {
-        tmp<-raSab_cbin_fc(Z,Y,a,b,Sab,odmax,odobs)
+        tmp<-raSab_bin_fc(Z,Y,a,b,Sab,Sab0=prior$Sab0,eta0=prior$eta0) 
         Z<-tmp$Z;Sab<-tmp$Sab;a<-tmp$a
       }
-      
-      if(model=="frn")
+      if(family=="cbin")
+      {
+        tmp<-raSab_cbin_fc(Z,Y,a,b,Sab,odmax,odobs,
+                           Sab0=prior$Sab0,eta0=prior$eta0)
+        Z<-tmp$Z;Sab<-tmp$Sab;a<-tmp$a
+      }
+      if(family=="frn")
       { 
-        tmp<-raSab_frn_fc(Z,Y,YL,a,b,Sab,odmax,odobs) 
+        tmp<-raSab_frn_fc(Z,Y,YL,a,b,Sab,odmax,odobs,
+                          Sab0=prior$Sab0,eta0=prior$eta0) 
         Z<-tmp$Z;Sab<-tmp$Sab;a<-tmp$a 
       }
     }
@@ -306,29 +385,12 @@ ame<-function (Y,Xdyad=NULL, Xrow=NULL, Xcol=NULL,
       Sab[1,2]<-Sab[2,1]<-.999*Sab[1,1]   
     }
 
-    # update rho
-    if(dcor) 
-    {
-      rho<-rrho_mh(Z-(Xbeta(X, beta) + outer(a, b, "+") + U %*% t(V)), rho,s2)
-    }
-
-    # shrink rho - symmetric case 
-    if(symmetric){ rho<-min(.9999,1-1/sqrt(s)) }
-
-    # update U,V
-    if (R > 0) 
-    { 
-      E<-Z-(Xbeta(X,beta)+outer(a,b,"+"))  ; if(symmetric){ E<-.5*(E+t(E)) }
-      shrink<- (s>.5*burn)
-
-      if(symmetric){ UV<-rUV_sym_fc(E, U, V, s2,shrink) }
-      if(!symmetric){UV<-rUV_fc(E, U, V,rho, s2,shrink) }
-
-      U<-UV$U ; V<-UV$V
-    }    
 
     # burn-in countdown
-    if(s%%odens==0&s<=burn & print){cat(round(100*s/burn,2)," pct burnin complete \n")}
+    if(s%%odens==0&s<=burn & print)
+    {
+      cat(round(100*s/burn,2)," pct burnin complete \n")
+    }
 
     # save parameter values and monitor the MC
     if(s%%odens==0 & s>burn) 
@@ -336,18 +398,17 @@ ame<-function (Y,Xdyad=NULL, Xrow=NULL, Xcol=NULL,
 
        # save BETA and VC - symmetric case 
       if(symmetric)
-      {
-        br<-beta[rb] ; bc<-beta[cb] ; bn<-(br+bc)/2 
+      { 
+        br<-beta[rb] ; bc<-beta[cb] ; bn<-(br+bc)/2
         sbeta<-c(beta[1*intercept],bn,beta[-c(1*intercept,rb,cb)] )
         BETA<-rbind(BETA,sbeta)
-
         VC<-rbind(VC,c(Sab[1,1],s2) )
       }
 
       # save BETA and VC - asymmetric case 
       if(!symmetric)
-      {
-        BETA<-rbind(BETA, beta)
+      { 
+        BETA<-rbind(BETA, beta) 
         VC<-rbind(VC, c(Sab[upper.tri(Sab, diag = T)], rho,s2)) 
       }
 
@@ -360,12 +421,13 @@ ame<-function (Y,Xdyad=NULL, Xrow=NULL, Xcol=NULL,
       EZ<-Xbeta(X, beta) + outer(a, b, "+") + U %*% t(V) 
       if(symmetric){ EZ<-(EZ+t(EZ))/2 } 
 
-      if(model=="bin") { Ys<-simY_bin(EZ,rho) }
-      if(model=="cbin"){ Ys<-1*(simY_frn(EZ,rho,odmax,YO=Y)>0) }
-      if(model=="frn") { Ys<-simY_frn(EZ,rho,odmax,YO=Y) }
-      if(model=="rrl") { Ys<-simY_rrl(EZ,rho,odobs,YO=Y ) }
-      if(model=="nrm") { Ys<-simY_nrm(EZ,rho,s2) }
-      if(model=="ord") { Ys<-simY_ord(EZ,rho,Y) } 
+      if(family=="bin") { Ys<-simY_bin(EZ,rho) }
+      if(family=="cbin"){ Ys<-1*(simY_frn(EZ,rho,odmax,YO=Y)>0) }
+      if(family=="frn") { Ys<-simY_frn(EZ,rho,odmax,YO=Y) }
+      if(family=="rrl") { Ys<-simY_rrl(EZ,rho,odobs,YO=Y ) }
+      if(family=="nrm") { Ys<-simY_nrm(EZ,rho,s2) }
+      if(family=="tob") { Ys<-simY_tob(EZ,rho,s2) } 
+      if(family=="ord") { Ys<-simY_ord(EZ,rho,Y) } 
 
       if(symmetric){ Ys[lower.tri(Ys)]<-0 ; Ys<-Ys+t(Ys)  }
 
@@ -385,37 +447,45 @@ ame<-function (Y,Xdyad=NULL, Xrow=NULL, Xcol=NULL,
         }
       }
 
-      # plot MC progress
-      if(plot) 
-      { 
+
+      if(plot)
+      {
         # plot VC
-        par(mfrow=c(1+2*gof,2),mar=c(3,3,1,1),mgp=c(1.75,0.75,0))
+        if(!gof | length(beta)==0 )
+        { 
+          par(mfrow=c(1+2*gof,2),mar=c(3,3,1,1),mgp=c(1.75,0.75,0)) 
+        }
+        if(gof & length(beta)>0 )
+        { 
+          par(mar=c(3,3,1,1),mgp=c(1.75,0.75,0)) 
+          layout(matrix(c(1,3,5,1,3,5,2,4,6,2,4,7),3,4)  ) 
+        } 
+
         mVC <- apply(VC, 2, median)
         matplot(VC, type = "l", lty = 1)
-        abline(h = mVC, col = 1:length(mVC)) 
+        abline(h = mVC, col = 1:length(mVC))
 
         # plot BETA
-        if(length(beta)>0) 
+        if(length(beta)>0)
         {
           mBETA <- apply(BETA, 2, median)
           matplot(BETA, type = "l", lty = 1, col = 1:length(mBETA))
           abline(h = mBETA, col = 1:length(mBETA))
-          abline(h = 0, col = "gray") 
-        } 
- 
+          abline(h = 0, col = "gray")
+        }
+
         # plot GOF 
         if(gof)
         {
-          for(k in 1:4)
+          for(k in 1:5)
           {
             hist(GOF[-1,k],xlim=range(GOF[,k]),main="",prob=TRUE,
-                 xlab=colnames(GOF)[k],col="lightblue",ylab="",yaxt="n")  
-            abline(v=GOF[1,k],col="red") 
+                 xlab=colnames(GOF)[k],col="lightblue",ylab="",yaxt="n")
+            abline(v=GOF[1,k],col="red")
           }
         } 
 
       }
-
 
     }
 

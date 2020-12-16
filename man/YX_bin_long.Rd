@@ -4,7 +4,9 @@
 \name{YX_bin_long}
 \alias{YX_bin_long}
 \title{binary relational data and covariates}
-\format{a list}
+\format{
+a list
+}
 \usage{
 data(YX_bin_long)
 }
@@ -19,4 +21,3 @@ gofstats(YX_bin_long$Y[,,1])
 
 }
 \keyword{datasets}
-

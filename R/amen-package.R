@@ -12,7 +12,7 @@
 #' software was supported in part by NICHD grant R01HD067509. 
 #' 
 #' \tabular{ll}{ Package: \tab amen\cr Type: \tab Package\cr Version: \tab
-#' 1.3 \cr Date: \tab 2017-05-23 \cr License: \tab GPL-3 \cr }
+#' 1.4.4 \cr Date: \tab 2020-12-01 \cr License: \tab GPL-3 \cr }
 #' 
 #' @name amen-package
 #' @aliases amen-package amen
@@ -25,7 +25,7 @@
 #' 
 #' 
 #' data(YX_frn)
-#' fit<-ame(YX_frn$Y,YX_frn$X,burn=5,nscan=5,odens=1,model="frn")
+#' fit<-ame(YX_frn$Y,YX_frn$X,burn=5,nscan=5,odens=1,family="frn")
 #' 
 #' summary(fit)
 #' 
@@ -240,7 +240,7 @@ NULL
 #' \item \code{polity}: country polity every 5 years.  
 #' }
 #' @source 
-#' Xun Cao : \url{http://polisci.la.psu.edu/people/xuc11}
+#' Xun Cao : \url{https://polisci.la.psu.edu/people/xuc11}
 #' 
 #' @name coldwar
 NULL
@@ -263,7 +263,7 @@ NULL
 #' \code{j}, but in general this is not the same as 
 #' \code{Trade[j,i,t,k,2]}, what \code{j} reports as importing from \code{i}. 
 #' 
-#' @source \url{http://comtrade.un.org/}, \url{http://www.measuringworth.com/}
+#' @source \url{https://comtrade.un.org/}, \url{https://www.measuringworth.com/}
 #' 
 #' @name comtrade
 NULL

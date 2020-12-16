@@ -4,7 +4,9 @@
 \name{addhealthc9}
 \alias{addhealthc9}
 \title{AddHealth community 9 data}
-\format{list}
+\format{
+list
+}
 \usage{
 data(addhealthc9)
 }
@@ -17,4 +19,3 @@ students in community 9 of the AddHealth study.
 }
 }
 \keyword{datasets}
-

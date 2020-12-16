@@ -4,12 +4,21 @@
 \alias{rs2_fc}
 \title{Gibbs update for dyadic variance}
 \usage{
-rs2_fc(E, rho)
+rs2_fc(Z, rho,offset=0,nu0=NULL,s20=NULL)
 }
 \arguments{
-\item{E}{square residual relational matrix}
+\item{Z}{n X n normal relational matrix}
 
 \item{rho}{current value of rho}
+
+\item{offset}{matrix of the same dimension as Z. It is assumed that Z-offset
+is equal to dyadic noise, so the offset should contain any additive and 
+multiplicative effects (such as \code{Xbeta(X,beta+ U\%*\%t(V) +  
+outer(a,b,"+")  } )}
+
+\item{nu0}{prior degrees of freedom}
+
+\item{s20}{prior estimate of s2}
 }
 \value{
 a new value of s2
@@ -20,4 +29,3 @@ Gibbs update for dyadic variance
 \author{
 Peter Hoff
 }
-

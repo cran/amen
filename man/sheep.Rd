@@ -3,12 +3,14 @@
 \name{sheep}
 \alias{sheep}
 \title{Sheep dominance data}
-\format{A list consisting of the following:
+\format{
+A list consisting of the following:
 \itemize{
 \item \code{dom}: a directed socioarray recording the number of 
 dominance encounters. 
 \item \code{age}: the age of each sheep in years. 
-}}
+}
+}
 \source{
 Linton Freeman
 }
@@ -17,4 +19,3 @@ Number of dominance encounters between 28 female bighorn sheep.
 Cell (i,j) records the number of times sheep i dominated sheep j. 
 From Hass (1991).
 }
-
