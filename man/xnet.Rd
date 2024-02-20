@@ -4,7 +4,11 @@
 \alias{xnet}
 \title{Network embedding}
 \usage{
-xnet(Y, fm = suppressWarnings(require("network")), seed = 1)
+xnet(
+  Y,
+  fm = try(requireNamespace("network", quietly = TRUE), silent = TRUE),
+  seed = 1
+)
 }
 \arguments{
 \item{Y}{(square matrix) The sociomatrix.}

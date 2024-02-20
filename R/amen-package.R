@@ -16,7 +16,6 @@
 #' 
 #' @name amen-package
 #' @aliases amen-package amen
-#' @docType package
 #' @author Peter Hoff, Bailey Fosdick, Alex Volfovsky, Yanjun He
 #' 
 #' Maintainer: Peter Hoff <peter.hoff@@duke.edu>
@@ -33,8 +32,7 @@
 #' 
 #' @import stats 
 #' @import graphics
-NULL
-
+"_PACKAGE"
 
 
 
@@ -240,7 +238,7 @@ NULL
 #' \item \code{polity}: country polity every 5 years.  
 #' }
 #' @source 
-#' Xun Cao : \url{https://polisci.la.psu.edu/people/xuc11}
+#' Xun Cao : \url{https://polisci.la.psu.edu/people/xuc11/}
 #' 
 #' @name coldwar
 NULL
@@ -263,7 +261,7 @@ NULL
 #' \code{j}, but in general this is not the same as 
 #' \code{Trade[j,i,t,k,2]}, what \code{j} reports as importing from \code{i}. 
 #' 
-#' @source \url{https://comtrade.un.org/}, \url{https://www.measuringworth.com/}
+#' @source \url{https://comtrade.un.org}, \url{https://www.measuringworth.com}
 #' 
 #' @name comtrade
 NULL

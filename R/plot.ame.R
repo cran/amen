@@ -8,12 +8,11 @@
 #' @param ... additional parameters (not used)
 #' @return a series of plots
 #' @author Peter Hoff
-#' @S3method plot ame
+#' @exportS3Method amen::plot
 plot.ame <-
 function(x, ...)
 {  
   fit<-x 
-  require(amen) 
 
   gof<-nrow(fit$GOF)>1
   p<-ncol(fit$BETA)

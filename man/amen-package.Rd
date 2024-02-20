@@ -32,6 +32,14 @@ summary(fit)
 plot(fit) 
 
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/pdhoff/amen}
+  \item Report bugs at \url{https://github.com/pdhoff/amen/issues}
+}
+
+}
 \author{
 Peter Hoff, Bailey Fosdick, Alex Volfovsky, Yanjun He
 
